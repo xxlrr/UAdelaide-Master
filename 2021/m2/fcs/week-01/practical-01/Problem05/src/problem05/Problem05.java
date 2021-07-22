@@ -3,24 +3,22 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package problem04;
+package problem05;
 
 /**
- * Problem04: Summing and Printing
  * @author haohongxing
+ * 
+ * Problem05 - Multiplying and Printing
  */
-public class Problem04 {
+public class Problem05 {
 
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String[] args) {
-        Integer number_a = 1;
-        Integer number_b = 2;
-        Integer number_c = number_a + number_b;
+        Integer number_a = 2;
+        Integer number_b = 3;
+        Integer number_c = number_a * number_b;
 
-        System.out.println("the sum of " + number_a + " and "
+        System.out.println("The multiplication of " + number_a + " and "
                 + number_b + " is " + number_c);
     }
-
+    
 }
