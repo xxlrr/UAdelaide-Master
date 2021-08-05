@@ -1,4 +1,4 @@
-    //==================================
+//==================================
 // Foundations of Computer Science
 // Student: Hongxing Hao
 // id: a1845302
@@ -48,12 +48,12 @@ public class Problem05 {
                 return;
             }
 
-            // prompt and receive user a matric of user input.
+            // prompt and receive matrices of user input.
             System.out.println("\nGreat! Let's calculate this determinant then.\n"
                     + "Please insert all the values for your matrix.\n");
             determinant.inputMatrices();        
 
-            // print the matric in a square style.
+            // print the matrices in a square style.
             System.out.println("\nThe determinant of your matrix is: \n");
             determinant.printMatrices();
             

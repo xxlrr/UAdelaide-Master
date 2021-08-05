@@ -20,7 +20,6 @@ public class Problem02 {
             System.out.print("Please input a integer: ");
             Scanner scanner = new Scanner(System.in);
             int number = scanner.nextInt();
-            scanner.close();
             
             // check whether the number is prime or not
             boolean isPrime = true;
