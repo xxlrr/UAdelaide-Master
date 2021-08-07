@@ -61,8 +61,14 @@ public class Problem05 {
             double result = determinant.calcDeterminant();
             System.out.println("\nDeterminant: " + String.format("%4.0f", result));
         }
+        // handle wrong inputs
         catch(InputMismatchException e){
             System.out.println("[ERROR]: your input does not match, please try again!");
+        }
+        // handle other exceptions
+        catch(Exception e){
+            System.out.println("Sorry, the program encountered an unknown error."
+                    + " Please try again");
         }
     }
     

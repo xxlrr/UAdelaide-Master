@@ -43,6 +43,11 @@ public class Problem02 {
             System.out.println("[ERROR]: your input does not match,"
                     + " please enter an integer!");
         }
+        // handle other exceptions
+        catch(Exception e){
+            System.out.println("Sorry, the program encountered an unknown error."
+                    + " Please try again");
+        }
     }
     
 }
