@@ -1,5 +1,3 @@
-package problem10;
-
 /**
  * @author haohongxing
  * 

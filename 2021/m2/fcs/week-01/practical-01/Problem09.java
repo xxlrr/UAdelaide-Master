@@ -1,5 +1,3 @@
-package problem09;
-
 import java.util.Scanner;
 
 /**
