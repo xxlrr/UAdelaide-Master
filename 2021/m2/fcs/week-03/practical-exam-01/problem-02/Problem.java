@@ -6,7 +6,6 @@
 // Year: 2021
 // Practical Exam Number: Problem02
 //===================================
-package problem02;
 
 public class Problem {
 

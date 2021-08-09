@@ -6,7 +6,6 @@
 // Year: 2021
 // Practical Number: Problem04
 //===================================
-package problem04;
 
 public class Problem04 {
 

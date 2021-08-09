@@ -6,7 +6,6 @@
 // Year: 2021
 // Practical Exam Number: Problem04
 //===================================
-package problem04;
 
 import java.util.InputMismatchException;
 import java.util.Scanner;

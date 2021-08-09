@@ -6,7 +6,6 @@
 // Year: 2021
 // Practical Number: WeatherReposrting
 //===================================
-package WeatherReporting;
 
 public class Main {
 

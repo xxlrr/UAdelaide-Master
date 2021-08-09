@@ -6,7 +6,6 @@
 // Year: 2021
 // Practical Number: Problem03
 //===================================
-package problem03;
 
 import java.util.InputMismatchException;
 import java.util.Scanner;
