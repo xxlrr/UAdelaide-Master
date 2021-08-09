@@ -6,7 +6,6 @@
 // Year: 2021
 // Practical Number: Random Numbers
 //===================================
-package random.numbers;
 
 import java.util.Random;
 

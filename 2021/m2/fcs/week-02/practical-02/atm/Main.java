@@ -6,7 +6,6 @@
 // Year: 2021
 // Practical Number: Problem05
 //===================================
-package atm;
 
 import java.util.Scanner;
 

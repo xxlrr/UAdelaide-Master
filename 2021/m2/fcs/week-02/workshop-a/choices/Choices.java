@@ -1,5 +1,3 @@
-package choices;
-
 import java.util.Scanner;
 
 public class Choices {
