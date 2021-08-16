@@ -13,8 +13,9 @@ public class Problem03 {
 
     public static void main(String[] args) {
         RectangleArea rect = new RectangleArea();
-        rect.read_input();
-        rect.display();
+        if(rect.read_input()){
+            rect.display();
+        }
     }
 
 }
