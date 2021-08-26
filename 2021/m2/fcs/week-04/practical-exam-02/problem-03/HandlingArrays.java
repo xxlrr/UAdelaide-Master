@@ -19,6 +19,7 @@ public class HandlingArrays {
         System.out.println("]");
      }
 
+    // sum each element of two arrays and return result
     public static double[] sumElements(double[] firstArray, double[] secondArray) {
         if(firstArray.length != secondArray.length) {
             throw new RuntimeException("Error - Arrays different shape");
@@ -32,6 +33,7 @@ public class HandlingArrays {
         return sumArray;
     }
 
+    // return a reversed array
     public static double[] reverseArray(double [] testArray) {
         double[] newArray = new double[testArray.length];
         for(int i=0; i<newArray.length; i++) {
