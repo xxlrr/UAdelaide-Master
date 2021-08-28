@@ -14,9 +14,17 @@ public class ShakingParty {
     // number of people in the party
     private int nPeople;
 
+    public int getnPeople() {
+        return nPeople;
+    }
+
+    public void setnPeople(int nPeople) {
+        this.nPeople = nPeople;
+    }
+
     // randomly generate the number of people in the party
     public ShakingParty() {
-        Random ran = new Random(100);
+        Random ran = new Random(1000);
         this.nPeople = ran.nextInt();
     }
 
@@ -44,6 +52,5 @@ public class ShakingParty {
         // total number of handshake equal to this person's number adding total number of handshake of everyone in front of him.
         return count + countHandShakes(count);
     }
-    
     
 }
