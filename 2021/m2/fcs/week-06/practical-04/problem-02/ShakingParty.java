@@ -49,8 +49,8 @@ public class ShakingParty {
         }
         // the number of handshake each person equal to the number of people in front of him.
         int count = nPeople - 1;
-        // total number of handshake equal to this person's number adding total number of handshake of everyone in front of him.
-        return count + countHandShakes(count);
+        // total number of handshake equal to this person's count adding total number of handshake of everyone in front of him.
+        return count + countHandShakes(nPeople - 1);
     }
     
 }
