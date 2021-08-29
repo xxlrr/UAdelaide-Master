@@ -4,7 +4,7 @@
 // id: a1845302
 // Semester: m2
 // Year: 2021
-// Practical Number: Problem02 - ShakingParty
+// Practical Number: Problem03 - ShakingParty
 //===================================
 
 import java.util.Random;
