@@ -48,7 +48,7 @@ public class ShakingPartyConstrainted extends ShakingParty {
         
         if(nCouples == 1) {
             // there is no one before the first couple.
-            return this.nCouples - 1;
+            return this.getnCouples() - 1;
         }
         // the number of handshake each couple equal to the number of couples 
         // in front of they plus the number of opposite sexes except the spouse.
