@@ -22,14 +22,17 @@ public class Hammer extends HandTool {
     // "Bang!" to the terminal if the hammer is available.
     @Override
     public void useTool(int times) {
+//        float value = this.value - (times * 0.01f);
+//        if (value > 0) {
+//            this.value = value;
+//            System.out.println("Bang!");
+//        }
+//        else {
+//            System.out.println("The value of the hammer is too low to use.");
+//        }
         float value = this.value - (times * 0.01f);
-        if (value > 0) {
-            this.value = value;
-            System.out.println("Bang!");
-        }
-        else {
-            System.out.println("The value of the hammer is too low to use.");
-        }
+        this.value = value > 0 ? value : 0;
+        System.out.println("Bang!");
     }
     
 }
