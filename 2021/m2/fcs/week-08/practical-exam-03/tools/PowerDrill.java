@@ -32,7 +32,7 @@ public class PowerDrill extends PowerTool {
         // }
         float value = this.value - (times * 0.03f);
         this.value = value > 0 ? value : 0;
-        System.out.println("Zssh");
+        System.out.println("Zssh!");
     }
     
 }
