@@ -21,12 +21,12 @@ public abstract class Tool implements Asset {
     // return the value of the tool.
     @Override
     public float getValue() {
-        return 0;
+        return this.value;
     }
     
     //return the weight of the tool.
     public float getWeight() {
-        return 0;
+        return this.weight;
     }
     
     // an abstract void method called useTool which takes in an integer
