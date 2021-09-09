@@ -22,14 +22,14 @@ public class Chisel extends HandTool {
     // "Scrape" to the terminal if the hammer is available.
     @Override
     public void useTool(int times) {
-//        float value = this.value - (times * 0.02f);
-//        if (value > 0) {
-//            this.value = value;
-//            System.out.println("Scrape");
-//        }
-//        else {
-//            System.out.println("The value of the chisel is too low to use.");
-//        }
+        // float value = this.value - (times * 0.02f);
+        // if (value > 0) {
+        //     this.value = value;
+        //     System.out.println("Scrape");
+        // }
+        // else {
+        //     System.out.println("The value of the chisel is too low to use.");
+        // }
         float value = this.value - (times * 0.02f);
         this.value = value > 0 ? value : 0;
         System.out.println("Scrape");
