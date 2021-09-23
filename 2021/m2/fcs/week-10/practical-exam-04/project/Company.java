@@ -106,6 +106,7 @@ public class Company {
         for (int i = 0; i < this.curStaff; i++) {
             ages[i] = this.staff[i].getAge();
         }
+        ages = sorting.sortInt(ages);
         int staffIndex = searching.search(ages, query);
         if (staffIndex != -1) {
             this.staff[staffIndex].display();
@@ -120,6 +121,7 @@ public class Company {
             names[i] = this.staff[i].getName();
             names[i] = names[i].toLowerCase();
         }
+        names = sorting.sortString(names);
         int staffIndex = searching.search(names, query.toLowerCase());
         if (staffIndex != -1) {
             this.staff[staffIndex].display();
