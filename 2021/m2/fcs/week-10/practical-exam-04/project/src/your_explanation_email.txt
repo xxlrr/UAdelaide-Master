@@ -1,0 +1,8 @@
+Dear manager, 
+
+The problem (1), was due to not correct sort staff by name, I fixed doing sortStringByIndex and sortString in Insertion.java;  
+The problem (2), was due to not correct search result, I fixed doing sort before searching in Main,java; 
+The problem (3), was due to use insert sorted algorithm lead to perform lower, I fixed doing selection sort algorithm in Selection.java;
+
+Kind regards, Honging Xing, a1845302
+
