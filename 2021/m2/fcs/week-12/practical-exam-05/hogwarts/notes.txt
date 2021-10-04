@@ -1,0 +1,4 @@
+In the problem 03, the output format in the method displayQueue consists a ordinal numeral.
+So, I wrote a function of numbers to ordinal numbers.
+
+Signature: private String getOrdinal(int num)
