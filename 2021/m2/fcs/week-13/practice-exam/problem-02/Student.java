@@ -5,10 +5,6 @@
  */
 
 
-/**
- *
- * @author lu
- */
 public class Student extends Person {
     public int score;
 
