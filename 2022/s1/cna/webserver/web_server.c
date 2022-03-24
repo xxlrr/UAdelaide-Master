@@ -149,34 +149,33 @@ int main(int argc, char *argv[])
 
       /* 7) Decide which status_code and reason phrase to return to client */
       /* START CODE SNIPPET 7 */
-      if (is_ok_to_parse_http_request) {
-          /* Check whether the request mothed is GET or HEAD. 
-           * The comparison here considers only capitalization (according to the requirements).
-           */
-          if (strcmp(new_request.method, "GET") != 0 && strcmp(new_request.method, "HEAD") != 0) {
-              /* The requested method isn't implemented */
-              status_code = 501;
-              status_phrase = "Not Implemented";
-          }
-          /* Check that the resource is valid. 
-           * A BUG was encountered when URI is "/".
-           * I didn't correct it, because that's not part of the requirements.
-           */
-          else if (!Is_Valid_Resource(new_request.URI)) {
-              /* The requested resource is not found */
-              status_code = 404;
-              status_phrase = "Not Found";
-          }
-          else {
+      if (is_ok_to_parse_http_request && Is_Valid_Request(new_request) ) {
+        if (strcmp(new_request.method, "GET") == 0) {
+          if (Is_Valid_Resource(new_request.URI)) {
             /* The requested resource is found */
             status_code = 200;
-            status_phrase = "OK";              
+            status_phrase = "OK";  
           }
+          else {
+            /* The requested resource is not found */
+            status_code = 404;
+            status_phrase = "Not Found";
+          }
+        }
+        else if (strcmp(new_request.method, "HEAD") == 0) {
+          status_code = 200;
+          status_phrase = "OK";    
+        }
+        else {
+          /* The requested method isn't implemented */
+          status_code = 501;
+          status_phrase = "Not Implemented";
+        }
       }
       else {
-          /* The client sent an invalid request */
-          status_code = 400;
-          status_phrase = "Bad Request";
+        /* The client sent an invalid request */
+        status_code = 400;
+        status_phrase = "Bad Request";
       }
       /* END CODE SNIPPET 7 */
 

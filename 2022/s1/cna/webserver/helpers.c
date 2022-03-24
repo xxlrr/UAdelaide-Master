@@ -105,7 +105,7 @@ bool Is_Valid_Resource(char * URI) {
   if (resource == NULL) {
     /* no http:// check if first character is /, if not add it */
     if (URI[0] != '/')
-      resource = strcat("/", URI);
+      resource = strcat(URI, "/");
     else 
       resource = URI;
   }
@@ -169,7 +169,7 @@ void Send_Resource(int socket, char * URI) {
   if (resource == NULL) {
     /* no http:// check if first character is /, if not add it */
     if (URI[0] != '/')
-      resource = strcat(URI, "/");
+      resource = strcat("/", URI);
     else 
       resource = URI;
   }
@@ -218,4 +218,35 @@ void Send_Resource(int socket, char * URI) {
   }
   puts("\nfinished reading file\n");
   fclose(file);
+}
+
+
+/*----------------------------------------------------------
+ * Function: Is_Valid_Request
+ *
+ * Purpose:  Checks if the request is valid
+ *
+ * Parameters:  request : a http request
+ *
+ * Returns:  false : the request is invalid
+ *           true  : the request is valid
+ *
+ *-----------------------------------------------------------
+ */
+ 
+bool Is_Valid_Request(struct http_request request) {
+
+  if (strcmp(request.method, "GET") != 0
+      && strcmp(request.method, "HEAD") != 0
+      && strcmp(request.method, "POST") != 0
+      && strcmp(request.method, "PUT") != 0
+      && strcmp(request.method, "DELETE") != 0
+      && strcmp(request.method, "CONNECT") != 0
+      && strcmp(request.method, "TRACE") != 0
+      && strcmp(request.method, "PATCH") != 0)
+  {
+      return false;
+  }
+  /* other test */
+  return true;
 }

@@ -53,4 +53,19 @@ extern bool Is_Valid_Resource(char *);
 
 extern void Send_Resource(int, char *);
 
+/*----------------------------------------------------------
+ * Function: Is_Valid_Request
+ *
+ * Purpose:  Checks if the request is valid
+ *
+ * Parameters:  request : a http request
+ *
+ * Returns:  false : the request is invalid
+ *           true  : the request is valid
+ *
+ *-----------------------------------------------------------
+ */
+ 
+extern bool Is_Valid_Request(struct http_request request);
+
 #endif
