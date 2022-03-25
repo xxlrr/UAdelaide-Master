@@ -54,6 +54,22 @@ extern bool Is_Valid_Resource(char *);
 extern void Send_Resource(int, char *);
 
 /*----------------------------------------------------------
+ * Function: Send_Header
+ *
+ * Purpose:  Sends the header contents to in URI on the socket
+ *
+ * Parameters:  socket  : the socket to send the content on
+ *                URI   : the Universal Resource Locator, both absolute and 
+ *                        relative URIs are accepted
+ *
+ * Returns:  void - errors will cause exit with error printed to stderr
+ *
+ *-----------------------------------------------------------
+ */
+
+void Send_Header(int socket, char * URI);
+
+/*----------------------------------------------------------
  * Function: Is_Valid_Request
  *
  * Purpose:  Checks if the request is valid

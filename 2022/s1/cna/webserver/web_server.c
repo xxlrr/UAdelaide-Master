@@ -216,6 +216,9 @@ int main(int argc, char *argv[])
          * send(??, "\r\n\r\n", strlen("\r\n\r\n"), 0);
          */
         /* START CODE SNIPPET 11 */
+        if(status_code == 200) {
+          Send_Header(connection_socket, new_request.URI);
+        }
         send(connection_socket, "\r\n\r\n", strlen("\r\n\r\n"), 0);
         /* END CODE SNIPPET 11 */
       }
