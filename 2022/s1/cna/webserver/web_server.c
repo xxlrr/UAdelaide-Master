@@ -149,8 +149,8 @@ int main(int argc, char *argv[])
 
       /* 7) Decide which status_code and reason phrase to return to client */
       /* START CODE SNIPPET 7 */
-      if (is_ok_to_parse_http_request && Is_Valid_Request(new_request) ) {
-        if (strcmp(new_request.method, "GET") == 0) {
+      if (is_ok_to_parse_http_request && Is_Valid_Request(new_request)) {
+        if (strcmp(new_request.method, "GET") == 0 || strcmp(new_request.method, "HEAD") == 0) {
           if (Is_Valid_Resource(new_request.URI)) {
             /* The requested resource is found */
             status_code = 200;
@@ -161,10 +161,6 @@ int main(int argc, char *argv[])
             status_code = 404;
             status_phrase = "Not Found";
           }
-        }
-        else if (strcmp(new_request.method, "HEAD") == 0) {
-          status_code = 200;
-          status_phrase = "OK";    
         }
         else {
           /* The requested method isn't implemented */
