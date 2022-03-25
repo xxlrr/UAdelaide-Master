@@ -282,11 +282,12 @@ void Send_Header(int socket, char * URI) {
   sz = ftell(file);
   rewind(file);
 
-  sprintf(content_header, "Content-Length: %ld\r\n\r\n", sz);
+  sprintf(content_header, "Content-Length: %ld\r\n", sz);
   printf("Sending headers: %s\n", content_header);
   send(socket, content_header, strlen(content_header), 0);
 
   free(server_directory);
+  puts("\nfinished reading file\n");
   fclose(file);
 }
 
