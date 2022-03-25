@@ -1,0 +1,9 @@
+220325-210458,make,install
+220325-210458,svn,"a1845302","2022/m1/cs/workshop01"
+220325-210458,error,"Cannot find any zip files in updates/"
+220325-210513,make,install
+220325-210513,svn,"a1845302","2022/m1/cs/workshop01"
+220325-210513,startups,workshop01-20220316-182606.zip
+220325-210513,updater,Updating: Makefile
+220325-210513,updater,Updating: updates/README
+220325-210513,updater,Update installed
