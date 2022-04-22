@@ -38,32 +38,32 @@ namespace Workshop_Tokeniser
     // if you choose not to use them, delete them
 
     // lt_le := '<' | '<='
-    static void parse_lt_le()
-    {
-    	next_char_mustbe('<');
-        if(next_char_isa('=')) read_next_char(); 
-    }
+   // static void parse_lt_le()
+    //{
+   // 	next_char_mustbe('<');
+    //    if(next_char_isa('=')) read_next_char(); 
+    //}
 
     // assign_eq ::= '=' | '=='
-    static void parse_assign_eq()
-    {
-    	next_char_mustbe('=');
-        if(next_char_isa('=')) read_next_char(); 
-    }
+    //static void parse_assign_eq()
+    //{
+    //	next_char_mustbe('=');
+    //    if(next_char_isa('=')) read_next_char(); 
+    //}
 
     // not_ne ::= '!' | '!='
-    static void parse_not_ne()
-    {
-	next_char_mustbe('!');
-        if(next_char_isa('=')) read_next_char();
-    }
+    //static void parse_not_ne()
+    //{
+//	next_char_mustbe('!');
+  //      if(next_char_isa('=')) read_next_char();
+    //}
 
     // gt_ge ::= '>' | '>='
-    static void parse_gt_ge()
-    {
-	next_char_mustbe('>');
-        if(next_char_isa('=')) read_next_char(); 
-    }
+    //static void parse_gt_ge()
+    //{
+//	next_char_mustbe('>');
+  //      if(next_char_isa('=')) read_next_char(); 
+    //}
 
     // varop ::= lt_le | assign_eq | not_ne | gt_ge
     // ch is '<', '=', '!', or '>'
