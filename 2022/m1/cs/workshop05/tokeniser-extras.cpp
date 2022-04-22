@@ -23,6 +23,11 @@ namespace Workshop_Tokeniser
         case cg_wspace:              // characters that start rule wspace
             switch(ch)
             {
+                case '\t':
+                case '\n':
+                case '\r':
+                case ' ':
+                    
                 return true ;
             default:
                 return false ;
@@ -30,6 +35,8 @@ namespace Workshop_Tokeniser
         case cg_identifier:          // characters that start rule identifier
             switch(ch)
             {
+                case 'a' ... 'z':
+                case 'A' ... 'Z':
                 return true ;
             default:
                 return false ;
@@ -37,6 +44,8 @@ namespace Workshop_Tokeniser
         case cg_letter:              // characters that start rule letter
             switch(ch)
             {
+                case 'a' ... 'z':
+                case 'A' ... 'Z':
                 return true ;
             default:
                 return false ;
@@ -44,6 +53,9 @@ namespace Workshop_Tokeniser
         case cg_alnum:               // characters that start rule alnum
             switch(ch)
             {
+            case '0' ... '9':
+            case 'a' ... 'z':
+            case 'A' ... 'Z':
                 return true ;
             default:
                 return false ;
@@ -51,6 +63,8 @@ namespace Workshop_Tokeniser
         case cg_integer:             // characters that start rule integer
             switch(ch)
             {
+            case '0' ... '9':
+                    
                 return true ;
             default:
                 return false ;
@@ -58,6 +72,7 @@ namespace Workshop_Tokeniser
         case cg_digit19:             // characters that start rule digit19
             switch(ch)
             {
+            case '1' ... '9':
                 return true ;
             default:
                 return false ;
@@ -65,6 +80,7 @@ namespace Workshop_Tokeniser
         case cg_digit:               // characters that start rule digit
             switch(ch)
             {
+            case '0' ... '9':
                 return true ;
             default:
                 return false ;
@@ -72,6 +88,11 @@ namespace Workshop_Tokeniser
         case cg_op:                  // characters that start rule op
             switch(ch)
             {
+            case '+':
+            case '-':
+            case '*':
+            case '/':
+                    
                 return true ;
             default:
                 return false ;
@@ -79,6 +100,15 @@ namespace Workshop_Tokeniser
         case cg_varop:               // characters that start rule varop
             switch(ch)
             {
+                case '<':
+                //case '<=':
+                case '=':
+                //case '==':
+                case '!':
+                //case '!=':
+                //case '>=':
+                case '>':
+                    
                 return true ;
             default:
                 return false ;
@@ -86,6 +116,15 @@ namespace Workshop_Tokeniser
         case cg_symbol:              // characters that start rule symbol
             switch(ch)
             {
+                case '@':
+                case '{':
+                case '}':
+                case ':':
+                case ';':
+                case '.':
+                case ',':
+                case '"':
+                    
                 return true ;
             default:
                 return false ;
@@ -102,8 +141,65 @@ namespace Workshop_Tokeniser
     TokenKind classify_spelling(string spelling)
     {
         if ( spelling == "" ) return tk_eoi ;
-
-        return tk_identifier ;
+        switch(spelling[0])
+        {
+        case ' ':
+            return tk_space;
+        case '\n':
+            return tk_newline;
+        case '\t':
+            return tk_tab;
+        case '\r':
+            return tk_carriage_return;
+        case 'a' ... 'z':
+        case 'A' ... 'Z':
+            return keyword_or_identifier(spelling);
+        case '0' ... '9':
+            return tk_integer;
+        case '+':
+            return tk_add;
+        case '-':
+            return tk_sub;
+        case '*':
+            return tk_times;
+        case '/':
+            return tk_divide;
+        case '<':
+	    if(spelling[1] == '=')
+                return tk_le;
+            return tk_lt;
+        case '=':
+            if(spelling[1] == '=')
+                return tk_eq;
+            return tk_assign;
+        case '!':
+	    if(spelling[1] == '=')
+                return tk_ne;
+            return tk_not;
+        case '>':
+	    if(spelling[1] == '=')
+                return tk_ge;
+            return tk_gt;
+        case '@':
+            return tk_at;
+        case '{':
+            return tk_lcb;
+        case '}':
+            return tk_rcb;
+        case ':':
+            return tk_colon;
+        case ';':
+            return tk_semi;
+        case '.':
+            return tk_dot;
+        case ',':
+            return tk_comma;
+        case '"':
+            return tk_dquote;
+                
+        default:
+            return tk_oops ;
+        }
     }
 
     // work out the correct spelling to use in the Token object being created by new_token()
@@ -115,3 +211,4 @@ namespace Workshop_Tokeniser
     }
 
 }
+
