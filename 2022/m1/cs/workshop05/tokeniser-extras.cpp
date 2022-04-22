@@ -196,6 +196,8 @@ namespace Workshop_Tokeniser
             return tk_comma;
         case '"':
             return tk_dquote;
+        case '(':
+            return tk_label;
                 
         default:
             return tk_oops ;
@@ -207,6 +209,8 @@ namespace Workshop_Tokeniser
     // this is only called by new_token()
     string correct_spelling(TokenKind kind,string spelling)
     {
+	if(kind == tk_label)
+	    return spelling.substr(1, spelling.length()-2);
         return spelling ;
     }
 
