@@ -248,7 +248,7 @@ check_compiler()
 # g++ 8*, 10*, 9*, 7*
 check_compilers()
 {
-    if [ "${System}" == "Darwin" ]
+    if [ "${System}" == "Darwin" -o "${System}" == "Linux" ]
     then
         version_field=4
         # On a Mac just check clang++ min version is 10.0.0, prefer 11.0.3
