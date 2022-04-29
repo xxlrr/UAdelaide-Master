@@ -168,16 +168,28 @@ void A_timerinterrupt(void)
   if (TRACE > 0)
     printf("----A: time out,resend packets!\n");
 
-  /**** 1. FILL IN CODE What state should the timer be in at this point? *****/  
-  for (i=windowfirst; i < windowfirst + windowcount; i++) {
-    if (TRACE > 0) 
+  if (TRACE > 0) {
+    for (i = windowfirst; (i % WINDOWSIZE) != windowlast; i++) {
       printf ("---A: resending packet %d\n", (buffer[i]).seqnum);
-    tolayer3(A, buffer[i]);
-    if (i == windowfirst) {
+      tolayer3(A, buffer[i]);
+      
+      if (i == windowfirst) {
+      starttimer(A, RTT);
+      }
+      packets_resent++;
+    }
+    
+    printf("---A: resending packet %d\n", (buffer[windowlast]).seqnum);
+    tolayer3(A,buffer[windowlast]);
+    
+    /**** 1. FILL IN CODE What state should the timer be in at this point? *****/
+    
+    if (windowfirst == windowlast) {
       starttimer(A, RTT);
     }
     packets_resent++;
   }
+ 
 }       
 
 
