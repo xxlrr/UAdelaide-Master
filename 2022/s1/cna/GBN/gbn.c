@@ -125,9 +125,10 @@ void A_input(struct pkt packet)
 
     /* check if it is a new ACK */
     isNewACK = false;
-    for (i=windowfirst, ACKs=0; i!=(windowlast+1)%WINDOWSIZE; i=(i+1)%WINDOWSIZE, ACKs++)
+    // for (i=windowfirst, ACKs=0; i!=(windowlast+1)%WINDOWSIZE; i=(i+1)%WINDOWSIZE, ACKs++)
+    for (i=windowfirst, ACKs=0; i < windowfirst + windowcount; i++, ACKs++)
     {
-      if (packet.acknum == buffer[i].seqnum) {
+      if (packet.acknum == buffer[i % WINDOWSIZE].seqnum) {
         isNewACK = true;
       }
     }
@@ -139,7 +140,7 @@ void A_input(struct pkt packet)
       new_ACKs++;
 
       /* delete the acked packets from window buffer */
-      windowfirst = i;
+      windowfirst = i % WINDOWSIZE;
       windowcount = windowcount - ACKs;
 
       /***** 1. FILL IN CODE  What else needs to be done when an ACK arrives
@@ -169,12 +170,12 @@ void A_timerinterrupt(void)
   if (TRACE > 0)
     printf("----A: time out,resend packets!\n");
   /**** 1. FILL IN CODE What state should the timer be in at this point? *****/
-  for (i=windowfirst; i!=(windowlast+1)%WINDOWSIZE; i=(i+1)%WINDOWSIZE)
+  for (i=windowfirst; ii < windowfirst + windowcount; i++)
   {
     if (TRACE > 0)
-	    printf ("---A: resending packet %d\n", (buffer[i]).seqnum);
-	  tolayer3(A, buffer[i]);
+	    printf ("---A: resending packet %d\n", (buffer[i%WINDOWSIZE]).seqnum);
 	  
+    tolayer3(A, buffer[i%WINDOWSIZE]);
 	  if (i == windowfirst) {
 		  starttimer(A, RTT);
 	  }
@@ -231,7 +232,7 @@ void B_input(struct pkt packet)
       printf("----B: packet corrupted or not expected sequence number, resend ACK!\n");
     /***** 3. FILL IN CODE  What ACK number should be sent if the packet
 	   was corrupted or out of order? *******/ 
-    sendpkt.acknum = expectedseqnum !=0 ? expectedseqnum- 1 : WINDOWSIZE;
+    sendpkt.acknum = expectedseqnum != 0 ? expectedseqnum - 1 : WINDOWSIZE;
   }
 
   /* create packet */
