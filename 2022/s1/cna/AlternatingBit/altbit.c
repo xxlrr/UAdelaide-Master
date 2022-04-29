@@ -125,7 +125,7 @@ void A_input(struct pkt packet)
      * the new ACK can be determined by simply checking
      * whether ACK_NUM is the same as Nex_Seq.
      */
-    if (packet.acknum != A_nextseqnum && windowcount >= WINDOWSIZE) {    /**** 2. FILL IN CODE replace TRUE with test whether this is a new ACK ***/
+    if (packet.acknum != A_nextseqnum) {    /**** 2. FILL IN CODE replace TRUE with test whether this is a new ACK ***/
       /* packet is a new ACK */
       if (TRACE > 0)
         printf("----A: ACK %d is not a duplicate\n",packet.acknum);
