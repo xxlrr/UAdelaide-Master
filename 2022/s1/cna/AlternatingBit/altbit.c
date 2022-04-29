@@ -233,7 +233,7 @@ void B_input(struct pkt packet)
 /* entity B routines are called. You can use it to do any initialization */
 void B_init(void)
 {
-  expectedseqnum = 1;
+  expectedseqnum = 0;
   B_nextseqnum = 1;
 }
 
