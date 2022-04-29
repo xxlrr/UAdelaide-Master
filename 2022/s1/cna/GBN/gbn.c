@@ -98,7 +98,7 @@ void A_output(struct msg message)
       starttimer(A, RTT);
     }
 
-    A_nextseqnum = (A_nextseqnum + 1) % (WINDOWSIZE + 1);  /* we have seqnum 0 to 5 */
+    A_nextseqnum = (A_nextseqnum + 1) % WINDOWSIZE;  /* we have seqnum 0 to 5 */
   }
   /* if blocked,  window is full */
   else {
@@ -222,7 +222,7 @@ void B_input(struct pkt packet)
     sendpkt.acknum = expectedseqnum;
 
     /* update state variables */
-    expectedseqnum = (expectedseqnum + 1) % (WINDOWSIZE + 1);        
+    expectedseqnum = (expectedseqnum + 1) % WINDOWSIZE;        
   }
   else {
     /* packet is corrupted or out of order */
@@ -235,7 +235,7 @@ void B_input(struct pkt packet)
 
   /* create packet */
   sendpkt.seqnum = B_nextseqnum;
-  B_nextseqnum = (B_nextseqnum + 1) % (WINDOWSIZE + 1);
+  B_nextseqnum = (B_nextseqnum + 1) % WINDOWSIZE;
     
   /* we don't have any data to send.  fill payload with 0's */
   for ( i=0; i<20 ; i++ ) 
