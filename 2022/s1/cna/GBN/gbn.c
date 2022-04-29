@@ -140,7 +140,7 @@ void A_input(struct pkt packet)
       new_ACKs++;
 
       /* delete the acked packets from window buffer */
-      windowfirst = i % WINDOWSIZE;
+      windowfirst = (i + 1) % WINDOWSIZE;
       windowcount = windowcount - ACKs;
 
       /***** 1. FILL IN CODE  What else needs to be done when an ACK arrives
@@ -234,7 +234,7 @@ void B_input(struct pkt packet)
     sendpkt.acknum = expectedseqnum;
 
     /* update state variables */
-    expectedseqnum = (expectedseqnum + 1) %  (WINDOWSIZE + 1);        
+    expectedseqnum = (expectedseqnum + 1) % (WINDOWSIZE + 1);        
   }
   else {
     /* packet is corrupted or out of order */
