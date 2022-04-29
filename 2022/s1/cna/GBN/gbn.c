@@ -7,6 +7,7 @@
 /* ******************************************************************
    Unfinished Alternating bit protocol.  Adapted from
    ALTERNATING BIT AND GO-BACK-N NETWORK EMULATOR: VERSION 1.1  J.F.Kurose
+
    Network properties:
    - one way network delay averages five time units (longer if there
    are other messages in the channel for GBN), but can be larger
@@ -14,8 +15,9 @@
    or lost, according to user-defined probabilities
    - packets will be delivered in the order in which they were sent
    (although some can be lost).
-   Modifications (6/6/2008 - CLP):
-   - removed bidirectional code and other code not used by prac.
+
+   Modifications (6/6/2008 - CLP): 
+   - removed bidirectional code and other code not used by prac. 
    - fixed C style to adhere to current programming style
    (7/8/2009 - CLP)
    - converted to Alt Bit
@@ -25,12 +27,11 @@
 #define WINDOWSIZE 6    /* alternating bit only allows one unacked packet */
 #define NOTINUSE (-1)   /* used to fill header fields that are not being used */
 
-/* generic procedure to compute the checksum of a packet.  Used by both sender and receiver
-   the simulator will overwrite part of your packet with 'z's.  It will not overwrite your
+/* generic procedure to compute the checksum of a packet.  Used by both sender and receiver  
+   the simulator will overwrite part of your packet with 'z's.  It will not overwrite your 
    original checksum.  This procedure must generate a different checksum to the original if
    the packet is corrupted.
 */
-
 int ComputeChecksum(struct pkt packet)
 {
   int checksum = 0;
@@ -62,7 +63,6 @@ static int windowcount;                /* the number of packets currently awaiti
 static int A_nextseqnum;               /* the next sequence number to be used by the sender */
 
 /* called from layer 5 (application layer), passed the message to be sent to other side */
-
 void A_output(struct msg message)
 {
   struct pkt sendpkt;
@@ -76,13 +76,13 @@ void A_output(struct msg message)
     /* create packet */
     sendpkt.seqnum = A_nextseqnum;
     sendpkt.acknum = NOTINUSE;
-    for ( i=0; i<20 ; i++ )
+    for ( i=0; i<20 ; i++ ) 
       sendpkt.payload[i] = message.data[i];
-    sendpkt.checksum = ComputeChecksum(sendpkt);
+    sendpkt.checksum = ComputeChecksum(sendpkt); 
 
     /* put packet in window buffer */
     /* windowlast will always be 0 for alternating bit; but not for GoBackN */
-    windowlast = (windowlast + 1) % WINDOWSIZE;
+    windowlast = (windowlast + 1) % WINDOWSIZE; 
     buffer[windowlast] = sendpkt;
     for (i=0; i<20; i++)
       buffer[windowlast].payload[i]=sendpkt.payload[i];  /* copy the array */
@@ -93,11 +93,12 @@ void A_output(struct msg message)
       printf("Sending packet %d to layer 3\n", sendpkt.seqnum);
     tolayer3 (A, sendpkt);
     /**** 1. FILL IN CODE There's something else A needs to do when it sends a packet. *****/
+    /* start the timer to control the timeout. */
     if (windowcount == 1) {
       starttimer(A, RTT);
     }
 
-    A_nextseqnum = (A_nextseqnum + 1) % (WINDOWSIZE + 1);  /* we only have seqnum 0 and 1 */
+    A_nextseqnum = (A_nextseqnum + 1) % (WINDOWSIZE + 1);  /* we have seqnum 0 to 5 */
   }
   /* if blocked,  window is full */
   else {
@@ -108,57 +109,53 @@ void A_output(struct msg message)
 }
 
 
-/* called from layer 3, when a packet arrives for layer 4
+/* called from layer 3, when a packet arrives for layer 4 
    In this practical this will always be an ACK as B never sends data.
 */
 void A_input(struct pkt packet)
 {
-  size_t ACKs = 0;
-  int i = 0;
-  bool dup = true;
-  /* if received ACK is not corrupted */
+  int i, ACKs;
+  bool isNewACK;
+
+  /* if received ACK is not corrupted */ 
   if (!IsCorrupted(packet)) {
     if (TRACE > 0)
       printf("----A: uncorrupted ACK %d is received\n",packet.acknum);
     total_ACKs_received++;
-  
-  int i = 0;
-  for (i = windowfirst; i < windowfirst + windowcount; i++) {
-    if (packet.acknum == buffer [i % WINDOWSIZE].seqnum) {
-      dup = false;
+
+    /* check if it is a new ACK */
+    isNewACK = false;
+    for (i=windowfirst, ACKs=1; i < windowfirst + windowcount; i++, ACKs++)
+    {
+      if (packet.acknum == buffer[i % WINDOWSIZE].seqnum) {
+        isNewACK = true;
+      }
     }
-  }
-    
-    /* check if new ACK or duplicate */
-    if (!dup) { /****(packet.acknum!= A_nextseqnum && !windowcount == 0) { ****/   /****!(windowcount == 0) ****/ /**** 2. FILL IN CODE replace TRUE with test whether this is a new ACK ***/
+
+    if (isNewACK) {    /**** 2. FILL IN CODE replace TRUE with test whether this is a new ACK ***/
       /* packet is a new ACK */
       if (TRACE > 0)
         printf("----A: ACK %d is not a duplicate\n",packet.acknum);
       new_ACKs++;
 
       /* delete the acked packets from window buffer */
-      for (i = windowfirst; (i % WINDOWSIZE) != windowlast && packet.acknum != buffer[i % WINDOWSIZE].seqnum; i++) {
-        ACKs++;
-      }
-      ACKs++;
-
-      windowfirst = (windowfirst + ACKs) % WINDOWSIZE;
+      windowfirst = i % WINDOWSIZE;
       windowcount = windowcount - ACKs;
-
 
       /***** 1. FILL IN CODE  What else needs to be done when an ACK arrives
        besides removing the packet from the window?  ****/
+      /* stop timer */
       stoptimer(A);
-    if (windowcount > 0) {
+      /* start timer if exists next */
+      if(windowcount > 0) {
         starttimer(A, RTT);
-    }
-
+      }
     }
     else
       if (TRACE > 0)
         printf ("----A: duplicate ACK received, do nothing!\n");
   }
-  else
+  else 
     if (TRACE > 0)
       printf ("----A: corrupted ACK is received, do nothing!\n");
 }
@@ -166,33 +163,22 @@ void A_input(struct pkt packet)
 /* called when A's timer goes off */
 void A_timerinterrupt(void)
 {
-  int i = 0;
+  int i;
+
   if (TRACE > 0)
     printf("----A: time out,resend packets!\n");
 
-  if (TRACE > 0) {
-  for (i = windowfirst; (i % WINDOWSIZE) != windowlast; i++) {
-    printf ("---A: resending packet %d\n", (buffer[i]).seqnum);
+  /**** 1. FILL IN CODE What state should the timer be in at this point? *****/  
+  for (i=windowfirst; i < windowfirst + windowcount; i++) {
+    if (TRACE > 0) 
+      printf ("---A: resending packet %d\n", (buffer[i]).seqnum);
     tolayer3(A, buffer[i]);
-    
     if (i == windowfirst) {
-    starttimer(A, RTT);
+      starttimer(A, RTT);
     }
     packets_resent++;
   }
-  
-  printf("---A: resending packet %d\n", (buffer[windowlast]).seqnum);
-  tolayer3(A,buffer[windowlast]);
-  
-  /**** 1. FILL IN CODE What state should the timer be in at this point? *****/
-  
-  if (windowfirst == windowlast) {
-    starttimer(A, RTT);
-  }
-  packets_resent++;
-  }
-  
-}
+}       
 
 
 
@@ -203,12 +189,11 @@ void A_init(void)
   /* initialise A's window, buffer and sequence number */
   A_nextseqnum = 0;  /* A starts with seq num 0, do not change this */
   windowfirst = 0;
-  windowlast = -1;   /* windowlast is where the last packet sent is stored.
-         new packets are placed in winlast + 1
+  windowlast = -1;   /* windowlast is where the last packet sent is stored.  
+         new packets are placed in winlast + 1 
          so initially this is set to -1       */
   windowcount = 0;
 }
-
 
 
 /********* Receiver (B)  variables and procedures ************/
@@ -236,31 +221,27 @@ void B_input(struct pkt packet)
     sendpkt.acknum = expectedseqnum;
 
     /* update state variables */
-    expectedseqnum = (expectedseqnum + 1) % (WINDOWSIZE + 1);
+    expectedseqnum = (expectedseqnum + 1) %  (WINDOWSIZE + 1);        
   }
   else {
     /* packet is corrupted or out of order */
-    if (TRACE > 0)
+    if (TRACE > 0) 
       printf("----B: packet corrupted or not expected sequence number, resend ACK!\n");
     /***** 3. FILL IN CODE  What ACK number should be sent if the packet
      was corrupted or out of order? *******/ 
-    if(expectedseqnum != 0) {
-    sendpkt.acknum = expectedseqnum - 1;
-    }
-  else {
-    sendpkt.acknum = WINDOWSIZE;
-    }
+    sendpkt.acknum = (expectedseqnum != 0 ? expectedseqnum - 1 : WINDOWSIZE);
   }
+
   /* create packet */
   sendpkt.seqnum = B_nextseqnum;
   B_nextseqnum = (B_nextseqnum + 1) % (WINDOWSIZE + 1);
-
+    
   /* we don't have any data to send.  fill payload with 0's */
-  for ( i=0; i<20 ; i++ )
-    sendpkt.payload[i] = '0';
+  for ( i=0; i<20 ; i++ ) 
+    sendpkt.payload[i] = '0';  
 
   /* computer checksum */
-  sendpkt.checksum = ComputeChecksum(sendpkt);
+  sendpkt.checksum = ComputeChecksum(sendpkt); 
 
   /* send out packet */
   tolayer3 (B, sendpkt);
@@ -280,7 +261,7 @@ void B_init(void)
  *****************************************************************************/
 
 /* Note that with simplex transfer from a-to-B, there is no B_output() */
-void B_output(struct msg message)
+void B_output(struct msg message)  
 {
 }
 
