@@ -170,7 +170,7 @@ void A_timerinterrupt(void)
   if (TRACE > 0)
     printf("----A: time out,resend packets!\n");
   /**** 1. FILL IN CODE What state should the timer be in at this point? *****/
-  for (i=windowfirst; ii < windowfirst + windowcount; i++)
+  for (i=windowfirst; i < windowfirst + windowcount; i++)
   {
     if (TRACE > 0)
 	    printf ("---A: resending packet %d\n", (buffer[i%WINDOWSIZE]).seqnum);
