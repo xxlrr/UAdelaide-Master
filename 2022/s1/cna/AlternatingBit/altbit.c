@@ -94,7 +94,7 @@ void A_output(struct msg message)
     tolayer3 (A, sendpkt);
     /**** 1. FILL IN CODE There's something else A needs to do when it sends a packet. *****/
     /* start the timer to control the timeout. */
-    stoptimer(A);
+    starttimer(A, RTT);
 
     A_nextseqnum = (A_nextseqnum + 1) % 2;  /* we only have seqnum 0 and 1 */
   }
@@ -124,10 +124,8 @@ void A_input(struct pkt packet)
      * Since ABP is a packet-by-packet stop protocol,
      * the new ACK can be determined by simply checking
      * whether ACK_NUM is the same as Nex_Seq.
-     * e.g. if (packet.acknum != A_nextseqnum) { ... }
-     * But I added a check function here to make it easier to expand later.
      */
-    if (A_isNewAck(packet)) {    /**** 2. FILL IN CODE replace TRUE with test whether this is a new ACK ***/
+    if (packet.acknum != A_nextseqnum) {    /**** 2. FILL IN CODE replace TRUE with test whether this is a new ACK ***/
       /* packet is a new ACK */
       if (TRACE > 0)
         printf("----A: ACK %d is not a duplicate\n",packet.acknum);
@@ -161,7 +159,6 @@ void A_timerinterrupt(void)
     printf ("---A: resending packet %d\n", (buffer[windowfirst]).seqnum);
   tolayer3(A,buffer[windowfirst]);
   /**** 1. FILL IN CODE What state should the timer be in at this point? *****/
-  stoptimer(A);
   starttimer(A, RTT);
   packets_resent++;
 }       
@@ -180,18 +177,6 @@ void A_init(void)
 		     so initially this is set to -1		   */
   windowcount = 0;
 }
-
-
-/* check if new ACK or duplicate */
-int A_isNewAck(struct pkt packet) {
-  /*
-   * Since ABP is a packet-by-packet stop protocol, 
-   * the new ACK can be determined by simply checking
-   * whether ACK_NUM is the same as Nex_Seq.
-   */
-  return packet.acknum != A_nextseqnum;
-}
-
 
 /********* Receiver (B)  variables and procedures ************/
 
@@ -226,7 +211,7 @@ void B_input(struct pkt packet)
       printf("----B: packet corrupted or not expected sequence number, resend ACK!\n");
     /***** 3. FILL IN CODE  What ACK number should be sent if the packet
 	   was corrupted or out of order? *******/ 
-    sendpkt.acknum = expectedseqnum != 0 ? expectedseqnum - 1 : WINDOWSIZE;
+    sendpkt.acknum = (expectedseqnum + 1) % 2;
   }
 
   /* create packet */
