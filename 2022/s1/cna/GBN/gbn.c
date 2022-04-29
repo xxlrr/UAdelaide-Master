@@ -98,7 +98,7 @@ void A_output(struct msg message)
       starttimer(A, RTT);
     }
 
-    A_nextseqnum = (A_nextseqnum + 1) % (WINDOWSIZE + 1);  /* we have seqnum 0 to 5 */
+    A_nextseqnum = (A_nextseqnum + 1) % (WINDOWSIZE + 1);  /* we only have seqnum 0 and 1 */
   }
   /* if blocked,  window is full */
   else {
@@ -129,6 +129,7 @@ void A_input(struct pkt packet)
     {
       if (packet.acknum == buffer[i % WINDOWSIZE].seqnum) {
         isNewACK = true;
+        break;
       }
     }
 
