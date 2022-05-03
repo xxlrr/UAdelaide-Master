@@ -248,7 +248,7 @@ check_compiler()
 # g++ 8*, 10*, 9*, 7*
 check_compilers()
 {
-    if [ "${System}" == "Darwin" ]
+    if [ "${System}" == "Darwin" -o "${System}" == "Linux" ]
     then
         version_field=4
         # On a Mac just check clang++ min version is 10.0.0, prefer 11.0.3
@@ -604,7 +604,7 @@ check_svn_originals()
         #    svn cl originals "${svn_originals[$i]}" > /dev/null 2> /dev/null
         #done
         echo -n "${now},svndiff," >> updates/log
-        if [ "${System}" == "Darwin" ] ; then
+        if [ "${System}" == "Darwin" -o "${System}" == "Linux" ] ; then
             svn diff --cl originals -x "-w --ignore-eol-style" | zip - - 2> /dev/null | base64 >> updates/log
         else
             svn diff --cl originals -x "-w --ignore-eol-style" | zip - - 2> /dev/null | base64 --wrap=0 >> updates/log

@@ -6,6 +6,7 @@
 #include "iobuffer.h"
 #include <iostream>
 #include <vector>
+#include <math.h>
 
 
 // to shorten the code
@@ -44,13 +45,51 @@ namespace Assignment_Tokeniser
 
     // remember unicode character U
     // U is a legal unicode code-point in the range 0 to 0x10FFFF
+
+    static string store[1024]; // remember each byte required.
     void remember(int U)
     {
-        // add code here to 
+        // count how many bits are required after removing leading 0s?
+        int bits = (int)log2(U) + 1;
+
+        string c0c1c2c3 = ""; // Temporarily store the UTF8 code point of U.
         // 1. work out what bytes are required to represent character U in UTF-8
+        if(bits <= 7)
+        {
+            c0c1c2c3 += (char)(U & 0x7F);
+        }
+        else if(bits <= 11)
+        {
+            c0c1c2c3 += (char)(0xC0 | ((U >> 6) & 0x1F));
+            c0c1c2c3 += (char)(0x80 | (U & 0x3F));
+        }
+        else if(bits <= 16)
+        {
+            c0c1c2c3 += (char)(0xE0 | ((U >> 12) & 0x0F));
+            c0c1c2c3 += (char)(0x80 | ((U >> 6) & 0x3F));
+            c0c1c2c3 += (char)(0x80 | ((U & 0x3F)));
+        }
+        else if(bits <= 21 )
+        {
+            c0c1c2c3 += (char)(0xF0 | ((U >> 18) & 0x07));
+            c0c1c2c3 += (char)(0x80 | ((U >> 12) & 0x3F));
+            c0c1c2c3 += (char)(0x80 | ((U >> 6) & 0x3F));
+            c0c1c2c3 += (char)(0x80 | (U & 0x3F));
+        }        
         // 2. remember each byte required
-        // 3. increment the column variable by the number of bytes required
+        store[line-1] += c0c1c2c3;
         // 4. if U is '\n', increment line and reset column to 1
+        if(U == '\n')
+        {
+            line++;
+            column = 1;
+        }
+        // 3. increment the column variable by the number of bytes required
+        else
+        {
+            column += c0c1c2c3.length();
+        }
+
     }
 
     // return a remembered line with trailing newline character
@@ -59,6 +98,11 @@ namespace Assignment_Tokeniser
     // the string is encoded in UTF-8
     string remembered_line(int line_number)
     {
-        return "" ;
+        if(line_number < 1 || line_number > get_line())
+        {
+            return "";
+        }
+
+        return store[line_number - 1];
     }
 }
