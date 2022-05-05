@@ -251,7 +251,7 @@ namespace Assignment_Tokeniser
         if(scientific[i] == 'E' || scientific[i] == 'e') {eee += scientific[i]; i++;}
         if(char_isa(scientific[i], cg_sign)) {sign += scientific[i]; i++;}
         for(; char_isa(scientific[i], cg_integer); i++) exponent += scientific[i];
-        if(!char_isa(scientific[i], '\0')) /* error */;
+        if(!char_isa(scientific[i], '\0')) /* throw new exception() */ return scientific;
         
         // process integer: delete leading 0s; keep one digit19
         string rest_integer;
