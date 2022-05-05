@@ -26,6 +26,7 @@ using namespace CS_IO_Buffers ;
 // . C++ strings just store sequences of single byte characters and UTF-8 is just a sequence of bytes
 // . the column counting is performed in bytes so you do not need to know how many UTF-8 characters the bytes represent
 //
+
 namespace Assignment_Tokeniser
 {
     // the line number of the next character to be remembered, starts at 1
@@ -46,7 +47,7 @@ namespace Assignment_Tokeniser
     // remember unicode character U
     // U is a legal unicode code-point in the range 0 to 0x10FFFF
 
-    static string store[1024]; // remember each byte required.
+    static vector<string> store(0); // remember each byte required.
     void remember(int U)
     {
         // count how many bits are required after removing leading 0s?
@@ -77,7 +78,9 @@ namespace Assignment_Tokeniser
             c0c1c2c3 += (char)(0x80 | (U & 0x3F));
         }        
         // 2. remember each byte required
-        store[line-1] += c0c1c2c3;
+        if(line>store.size())
+            store.push_back("");
+        store.back() = store.back() + c0c1c2c3;
         // 4. if U is '\n', increment line and reset column to 1
         if(U == '\n')
         {

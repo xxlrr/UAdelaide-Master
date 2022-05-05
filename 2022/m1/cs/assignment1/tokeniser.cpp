@@ -50,6 +50,9 @@ namespace Assignment_Tokeniser
         // parsing the part: (fraction exponent?)?
         if(next_char_isa('.'))
         {
+            // read '.'
+            read_next_char();
+
             // digit*
             while (next_char_isa(cg_digit)) read_next_char();
             

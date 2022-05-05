@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include <string>
 #include "iobuffer.h"
 #include "tokeniser-extras.h"
 
@@ -239,6 +239,65 @@ namespace Assignment_Tokeniser
         return tk_oops;            // for error handling
     }
 
+    static string format_scientific(string scientific)
+    {
+        string integer, decimal, eee, sign, exponent, new_scientific;
+
+        // split spelling into integer, decimal, eee, sign, exponent 
+        int i=0;
+        for(; char_isa(scientific[i], cg_integer); i++) integer += scientific[i];
+        if(scientific[i] == '.') /* useless, drop it */ i++;
+        for(; char_isa(scientific[i], cg_integer); i++) decimal += scientific[i];
+        if(scientific[i] == 'E' || scientific[i] == 'e') {eee += scientific[i]; i++;}
+        if(char_isa(scientific[i], cg_sign)) {sign += scientific[i]; i++;}
+        for(; char_isa(scientific[i], cg_integer); i++) exponent += scientific[i];
+        if(!char_isa(scientific[i], '\0')) /* error */;
+        
+        // process integer: delete leading 0s; keep one digit19
+        string rest_integer;
+        while(integer.begin() != integer.end() && (*integer.begin()) == '0')
+            integer.erase(integer.begin());
+        if(integer.length() > 1) {
+            rest_integer = integer.substr(1);
+            integer = integer.substr(0,1);
+        }
+        
+        // process decimal: delete ending 0s; combine rest_integer
+        int useless0s=0;
+        if(integer.length() == 0) {
+            for(useless0s=0; decimal.begin() != decimal.end() && (*(decimal.begin())) == '0'; useless0s++)
+                decimal.erase(decimal.begin());
+            if(decimal.length() > 0) {
+                integer = decimal.substr(0, 1);
+                decimal = decimal.substr(1);
+                useless0s++;
+            }    
+        }
+        while(decimal.begin() != decimal.end() && (*(decimal.end()-1)) == '0')
+            decimal.erase(decimal.end()-1);
+        decimal = rest_integer + decimal;
+        
+        // process exponent: correct it.
+        int i_exponent;
+        exponent = exponent.length() > 0 ? exponent : "0";
+        i_exponent = stoi(sign + exponent);
+        i_exponent += rest_integer.length() - useless0s;
+        exponent = std::to_string(i_exponent);
+        // cout << "sci: " << scientific << " rest: " << rest_integer << " rlen: " << rest_integer.length() << " exponent: " << i_exponent << endl;
+        
+        // combine all parts
+        if(integer == "") 
+            return "0";
+        new_scientific = integer;
+        if(decimal.length() > 0)
+            new_scientific += "." + decimal;
+        new_scientific += "e";
+        new_scientific += i_exponent >= 0 ? "+" : "";
+        new_scientific += exponent;
+
+        return new_scientific;
+    }
+
     // work out the correct spelling to use in the Token object being created by new_token()
     // the spelling is a valid token and kind is its kind
     string correct_spelling(TokenKind kind,string spelling)
@@ -263,14 +322,9 @@ namespace Assignment_Tokeniser
             return spelling.substr(1, spelling.length() - 2);
         }
 
-
-    // * scientific ::= integer fraction exponent?
-    //   - fraction ::= '.' digit*
-    //   - exponent ::= eee sign? integer?
-    //   - eee      ::= 'e' | 'E'
-    //   - sign     ::= '+' | '-'
         // finxing scientific
-        if(kind == tk_scientific){
+        if(kind == tk_scientific){ 
+            return format_scientific(spelling);
         }
 
         return spelling ;
