@@ -1,4 +1,5 @@
 #include <string>
+#include <math.h>
 #include "iobuffer.h"
 #include "tokeniser-extras.h"
 
@@ -241,61 +242,80 @@ namespace Assignment_Tokeniser
 
     static string format_scientific(string scientific)
     {
-        string integer, decimal, eee, sign, exponent, new_scientific;
+        int dPos=-1, ePos=-1;
+        for(int i=0; i<scientific.length(); i++)
+        {
+            switch (scientific[i])
+            {
+            case '.':
+                dPos = i;
+                break;
+            case 'E':
+            case 'e':
+                ePos = i;
+                break;
+            }
+        }
 
-        // split spelling into integer, decimal, eee, sign, exponent 
-        int i=0;
-        for(; char_isa(scientific[i], cg_integer); i++) integer += scientific[i];
-        if(scientific[i] == '.') /* useless, drop it */ i++;
-        for(; char_isa(scientific[i], cg_integer); i++) decimal += scientific[i];
-        if(scientific[i] == 'E' || scientific[i] == 'e') {eee += scientific[i]; i++;}
-        if(char_isa(scientific[i], cg_sign)) {sign += scientific[i]; i++;}
-        for(; char_isa(scientific[i], cg_integer); i++) exponent += scientific[i];
-        if(!char_isa(scientific[i], '\0')) /* throw new exception() */ return scientific;
-        
-        // process integer: delete leading 0s; keep one digit19
-        string rest_integer;
-        while(integer.begin() != integer.end() && (*integer.begin()) == '0')
-            integer.erase(integer.begin());
-        if(integer.length() > 1) {
-            rest_integer = integer.substr(1);
-            integer = integer.substr(0,1);
-        }
-        
-        // process decimal: delete ending 0s; combine rest_integer
-        int useless0s=0;
-        if(integer.length() == 0) {
-            for(useless0s=0; decimal.begin() != decimal.end() && (*(decimal.begin())) == '0'; useless0s++)
-                decimal.erase(decimal.begin());
-            if(decimal.length() > 0) {
-                integer = decimal.substr(0, 1);
-                decimal = decimal.substr(1);
-                useless0s++;
-            }    
-        }
-        while(decimal.begin() != decimal.end() && (*(decimal.end()-1)) == '0')
-            decimal.erase(decimal.end()-1);
-        decimal = rest_integer + decimal;
-        
-        // process exponent: correct it.
-        int i_exponent;
-        exponent = exponent.length() > 0 ? exponent : "0";
-        i_exponent = stoi(sign + exponent);
-        i_exponent += rest_integer.length() - useless0s;
-        exponent = std::to_string(i_exponent);
-        // cout << "sci: " << scientific << " rest: " << rest_integer << " rlen: " << rest_integer.length() << " exponent: " << i_exponent << endl;
-        
-        // combine all parts
-        if(integer == "") 
+        string s_integer, s_fraction, s_exponent;
+        s_integer = dPos >= 0 ? scientific.substr(0, dPos) : scientific.substr(0, ePos);
+        s_fraction = dPos >= 0 ? scientific.substr(dPos+1, ePos-dPos-1) : "0";
+        s_exponent = ePos >= 0 ? s_exponent = scientific.substr(ePos+1) : "0";
+        if(s_fraction == "")
+            s_fraction = "0";
+        if(s_exponent=="+" || s_exponent=="-" || s_exponent=="")
+            s_exponent = "0";
+
+        // cout << scientific << " " <<s_integer << " " << s_fraction << " " << s_exponent << endl;
+
+        int integer, fraction, exponent;
+        integer = stoi(s_integer);
+        fraction = stoi(s_fraction);
+        exponent = stoi(s_exponent);
+
+        if(integer == 0 && fraction==0)
             return "0";
-        new_scientific = integer;
-        if(decimal.length() > 0)
-            new_scientific += "." + decimal;
-        new_scientific += "e";
-        new_scientific += i_exponent >= 0 ? "+" : "";
-        new_scientific += exponent;
+
+        int shift, zoom, odd, leading0s;
+        if(integer != 0) {
+            leading0s = s_fraction.length() - floor(log10(fraction)) - 1;
+            shift = floor(log10(integer));
+            zoom = pow(10, shift);
+            odd = zoom == 0 ? 0 : integer % zoom;
+            integer = zoom == 0 ? integer : integer / zoom;
+            exponent = exponent + shift;
+        }
+        else 
+        {
+            leading0s = 0;
+            shift = floor(log10(fraction));
+            zoom = pow(10, shift);
+            odd = zoom == 0 ? 0 : fraction % zoom;
+            integer = zoom == 0 ? fraction : fraction / zoom;
+            shift -=  s_fraction.length();
+            exponent = exponent + shift;
+            fraction = 0;
+        }
+        while(fraction!=0 && fraction%10==0) fraction /= 10;
+
+        // cout << shift << " " << zoom << " " << odd << " " << leading0s << endl;
+
+        string new_scientific;
+        new_scientific = std::to_string(integer);
+        if(odd != 0 || fraction != 0)
+        {
+            new_scientific +=  ".";
+            if(odd != 0) {
+                new_scientific += string(shift-(log10(odd)+1), '0') + std::to_string(odd);
+            }
+            if(fraction != 0) {
+                new_scientific += string(leading0s, '0') + std::to_string(fraction);
+            }
+        }
+        new_scientific.append("e").append(exponent >=0 ? "+" : "").append(::to_string(exponent));
 
         return new_scientific;
+        // return scientific;
     }
 
     // work out the correct spelling to use in the Token object being created by new_token()
