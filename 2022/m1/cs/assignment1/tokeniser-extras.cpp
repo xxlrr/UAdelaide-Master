@@ -9,7 +9,7 @@
  */
 
 #include <string>
-#include <math.h>
+#include <cmath>
 #include "iobuffer.h"
 #include "tokeniser-extras.h"
 
@@ -278,101 +278,85 @@ namespace Assignment_Tokeniser
         return tk_oops;            // for error handling
     }
 
-    // process a scientific notation into a standard format
-    static string format_scientific(string scientific)
+    // the fastest way to process a scientific notation into a standard format
+    static string format_scientific(string s)
     {
+        int len = s.length();
+        char n[len + 8]; // save the processed string. +8 is very enough!
 
-        // find '.' and 'E' or'e'
-        int dPos = -1, ePos = -1;
-        for (int i = 0; i < scientific.length(); i++)
+        int s_i = 0, n_i = 0, n_valid = -1, dot_from = -1, dot_to = -1;
+        // process the decimal part
+        for (; s_i < len; s_i++)
         {
-            switch (scientific[i])
+            if (s[s_i] == 'e' || s[s_i] == 'E')
+                break;
+
+            if (n_i == 1)
             {
+                n[n_i] = '.';
+                dot_to = s_i;
+                n_i++;
+            }
+
+            switch (s[s_i])
+            {
+            case '1' ... '9':
+                n[n_i] = s[s_i];
+                n_valid = n_i;
+                n_i++;
+                break;
+            case '0':
+                if (n_i > 1)
+                {
+                    n[n_i] = s[s_i];
+                    n_i++;
+                }
+                break;
             case '.':
-                dPos = i;
+                dot_from = s_i;
                 break;
-            case 'E':
-            case 'e':
-                ePos = i;
-                break;
+            default:
+                // error
+                return "";
             }
         }
 
-        // split scientific into s_integer, s_fraction, s_expoenent
-        string s_integer, s_fraction, s_exponent;
-        s_integer = dPos >= 0 ? scientific.substr(0, dPos) : scientific.substr(0, ePos);
-        s_fraction = dPos >= 0 ? scientific.substr(dPos + 1, ePos - dPos - 1) : "0";
-        s_exponent = ePos >= 0 ? s_exponent = scientific.substr(ePos + 1) : "0";
-
-        // corrent s_integer, s_fraction, s_expoenent
-        if (s_fraction == "")
-            s_fraction = "0";
-        if (s_exponent == "+" || s_exponent == "-" || s_exponent == "")
-            s_exponent = "0";
-
-        // cout << scientific << " " <<s_integer << " " << s_fraction << " " << s_exponent << endl;
-
-        // convert s_integer, s_fraction s_exponent to numbers
-        // Attention: the fraction here is not corrent.
-        // Because it contains ending 0s.
-        // I will correct later.
-        int integer, fraction, exponent;
-        integer = stoi(s_integer);
-        fraction = stoi(s_fraction);
-        exponent = stoi(s_exponent);
-
-        // return "0" if the scientific is 0
-        if (integer == 0 && fraction == 0)
+        // this means that the decimal part is equal to 0
+        if (n_valid == -1)
             return "0";
 
-        // corrent the values of integer, fraction and exponent by shifting, deleting invalid 0s and ...
-        int shift, zoom, odd, leading0s;
-        if (integer != 0)
+        // correct the dot position
+        if (dot_to == -1)
+            dot_to = s_i;
+        if (dot_from == -1)
+            dot_from = s_i;
+        if (dot_to > dot_from)
+            dot_to -= 1;
+
+        // process the exponent part
+        string s_exponent;
+        int i_exponent;
+
+        // adjust the value of i_exponent
+        s_exponent = (s_i < len) ? s.substr(s_i + 1) : "";
+        i_exponent = (s_exponent == "+" || s_exponent == "-" || s_exponent == "") ? 0 : stoi(s_exponent);
+        i_exponent += dot_from - dot_to;
+
+        n[++n_valid] = 'e';
+        n[++n_valid] = i_exponent >= 0 ? '+' : '-';
+
+        // convert the value of abs(i_exponent) to a string and put it to n
+        int temp = abs(i_exponent);
+        int width = (temp == 0 ? 0 : floor(log10(temp))) + 1;
+        for (int i = 0; i < width; i++)
         {
-            leading0s = s_fraction.length() - floor(log10(fraction)) - 1;
-            shift = floor(log10(integer));
-            zoom = pow(10, shift);
-            odd = zoom == 0 ? 0 : integer % zoom;
-            integer = zoom == 0 ? integer : integer / zoom;
-            exponent = exponent + shift;
+            n[n_valid + width - i] = temp % 10 + '0';
+            temp = temp / 10;
         }
+        n_valid += width;
 
-        // handles the case where there are no integers
-        else
-        {
-            leading0s = 0;
-            shift = floor(log10(fraction));
-            zoom = pow(10, shift);
-            odd = zoom == 0 ? 0 : fraction % zoom;
-            integer = zoom == 0 ? fraction : fraction / zoom;
-            shift -= s_fraction.length();
-            exponent = exponent + shift;
-            fraction = 0;
-        }
-
-        // corrent fraction
-        while (fraction!=0 && fraction%10==0) fraction /= 10;
-
-        // cout << shift << " " << zoom << " " << odd << " " << leading0s << endl;
-
-        // combile numbers to a standard format scientific notation
-        string new_scientific;
-        new_scientific = std::to_string(integer);
-        if (odd != 0 || fraction != 0)
-        {
-            new_scientific += ".";
-            if (odd != 0)
-            {
-                new_scientific += string(shift - (log10(odd) + 1), '0') + std::to_string(odd);
-            }
-            if (fraction != 0)
-            {
-                new_scientific += string(leading0s, '0') + std::to_string(fraction);
-            }
-        }
-        new_scientific.append("e").append(exponent >= 0 ? "+" : "").append(::to_string(exponent));
-
-        return new_scientific;
+        n[++n_valid] = '\0';
+        return string(n);   // return n;  is not safe?
     }
 
     // work out the correct spelling to use in the Token object being created by new_token()
