@@ -2,3 +2,7 @@ function Silly.func 0
 (Silly.func)
 
 push static 6
+@Silly.6
+A=M
+D=A
+P=D
