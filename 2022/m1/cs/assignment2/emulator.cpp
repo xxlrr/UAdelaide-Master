@@ -77,7 +77,13 @@ using namespace Hack_Computer ;
 // omit dest= if all destination bits are 0
 // omit ;jump if all jump bits are 0
 string disassemble_instruction(uint16_t instruction)
-{
+{    
+    if ((instruction & 0x8000) == 0)
+    {
+        // A instruction
+        return "@" + to_string(instruction);
+    }
+
     return "A=D+1;JGT" ;
 }
 
@@ -88,14 +94,13 @@ static void emulate_instruction()
 {
     uint16_t pc = read_PC();
     uint16_t instruction = read_ROM(pc);
-    // write_to_traces(to_string(pc));
-    // write_to_traces(to_string(instruction));
     
     if ((instruction & 0x8000) == 0)
     {
         // A instruction
         write_A(instruction);
     }
+
     write_PC(pc+1);
 }
 
