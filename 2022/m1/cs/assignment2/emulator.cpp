@@ -26,6 +26,48 @@ using namespace Hack_Computer ;
 // All parameters passed to a write_*() function are 16-bit unsigned integers
 //
 
+    // *********** reading / writing registers / RAM / ROM ***********
+    //
+    // read register A, D or PC and return an unsigned 16-bit integer
+    // uint16_t read_A() {}
+    // uint16_t read_D() {}
+
+    // uint16_t PC;
+    // uint16_t read_PC()
+    // {
+    //     return PC;
+    // }
+
+    // write an unsigned 16-bit integer to register A, D or PC
+    // void write_A(uint16_t new_value) {}
+    // void write_D(uint16_t new_value) {}
+    // void write_PC(uint16_t new_value) {}
+
+    // read an unsigned 16-bit integer from an address in ROM
+    // attempts to read from addresses in the range 32768 to 65535 will return 0 as the result
+    // uint16_t ROM[32768];
+    // uint16_t read_ROM(uint16_t address)
+    // {
+    //     if (address > 32767)
+    //         return 0;
+    //     return ROM[address];
+    // }
+
+    // read an unsigned 16-bit integer from an address in RAM
+    // attempts to read from addresses in the range 24577 to 65535 will return 0 as the result
+    // uint16_t read_RAM(uint16_t address) {}
+
+    // write an unsigned 16-bit integer to an address in RAM
+    // attempts to write to addresses in the range 24576 to 65535 will not change the RAM
+    // void write_RAM(uint16_t address,uint16_t new_value) {}
+
+    // *********** disassembler support  ***********
+    //
+    // assembler equivalent of destination, aluop and jump components of a C-instruction
+    // std::string destination(uint16_t destination_bits) {}
+    // std::string aluop(uint16_t aluop_bits) {}
+    // std::string jump(uint16_t jump_bits) {}
+
 /*****************   REPLACE THE FOLLOWING CODE  ******************/
 
 
@@ -44,6 +86,17 @@ string disassemble_instruction(uint16_t instruction)
 // if you want to produce additional output, use write_to_traces()
 static void emulate_instruction()
 {
+    uint16_t pc = read_PC();
+    uint16_t instruction = read_ROM(pc);
+    // write_to_traces(to_string(pc));
+    // write_to_traces(to_string(instruction));
+    
+    if ((instruction & 0x8000) == 0)
+    {
+        // A instruction
+        write_A(instruction);
+    }
+    write_PC(pc+1);
 }
 
 
