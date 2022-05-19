@@ -156,9 +156,38 @@ static uint16_t emulate_comp(uint16_t instruction)
 // other parts are ignored.
 static void emulate_dest(uint16_t instruction, uint16_t operands)
 {
-    switch(instruction & 0x1FC0)    // 0x0038 == 0B 0000 0000 0011 1000
-    {
+    uint16_t iDest = (instruction & 0x0038) >> 3;   // 0x0038 == 0B 0000 0000 0011 1000
 
+    switch(iDest)
+    {
+        case 0B000: // ""
+            break;
+        case 0B001: // "M"
+            write_RAM(read_A(), operands);
+            break;
+        case 0B010: // "D"
+            write_D(operands);
+            break;
+        case 0B011: // "MD"
+            write_RAM(read_A(), operands);
+            write_D(operands);
+            break;
+        case 0B100: // "A"
+            write_A(operands);
+            break;
+        case 0B101: // "AM"
+            write_A(operands);
+            write_RAM(read_A(), operands);
+            break;
+        case 0B110: // "AD"
+            write_A(operands);
+            write_D(operands);
+            break;
+        case 0B111: // "AMD"
+            write_A(operands);
+            write_RAM(read_A(), operands);
+            write_D(operands);
+            break;
     }
 }
 
@@ -166,9 +195,39 @@ static void emulate_dest(uint16_t instruction, uint16_t operands)
 // other parts are ignored.
 static void emulate_jump(uint16_t instruction, uint16_t operands)
 {
-    switch(instruction & 0x1FC0)    // 0x0007 == 0B 0000 0000 0000 0111
-    {
+    uint16_t iJump = (instruction & 0x0007);        // 0x0007 == 0B 0000 0000 0000 0111
 
+    switch(iJump)
+    {
+        case 0B000: // ""
+            break;
+        case 0B001: // "JGT"
+            if (operands > 0)
+                write_PC(read_A());
+            break;
+        case 0B010: // "JEQ"
+            if (operands == 0)
+                write_PC(read_A());
+            break;
+        case 0B011: // "JGE"
+            if (operands >= 0)
+                write_PC(read_A());
+            break;
+        case 0B100: // "JLT"
+            if (operands < 0)
+                write_PC(read_A());
+            break;
+        case 0B101: // "JNE"
+            if (operands <= 0)
+                write_PC(read_A());
+            break;
+        case 0B110: // "JLE"
+            if (operands != 0)
+                write_PC(read_A());
+            break;
+        case 0B111: // "JMP"
+            write_PC(read_A());
+            break;
     }
 }
 
