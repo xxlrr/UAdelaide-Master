@@ -5,6 +5,7 @@
 #include <bitset>
 #include <vector>
 #include <iostream>
+#include <map>
 
 // to make out programs a bit neater
 using namespace std ;
@@ -26,50 +27,29 @@ using namespace Hack_Computer ;
 // All parameters passed to a write_*() function are 16-bit unsigned integers
 //
 
-    // *********** reading / writing registers / RAM / ROM ***********
-    //
-    // read register A, D or PC and return an unsigned 16-bit integer
-    // uint16_t read_A() {}
-    // uint16_t read_D() {}
-
-    // uint16_t PC;
-    // uint16_t read_PC()
-    // {
-    //     return PC;
-    // }
-
-    // write an unsigned 16-bit integer to register A, D or PC
-    // void write_A(uint16_t new_value) {}
-    // void write_D(uint16_t new_value) {}
-    // void write_PC(uint16_t new_value) {}
-
-    // read an unsigned 16-bit integer from an address in ROM
-    // attempts to read from addresses in the range 32768 to 65535 will return 0 as the result
-    // uint16_t ROM[32768];
-    // uint16_t read_ROM(uint16_t address)
-    // {
-    //     if (address > 32767)
-    //         return 0;
-    //     return ROM[address];
-    // }
-
-    // read an unsigned 16-bit integer from an address in RAM
-    // attempts to read from addresses in the range 24577 to 65535 will return 0 as the result
-    // uint16_t read_RAM(uint16_t address) {}
-
-    // write an unsigned 16-bit integer to an address in RAM
-    // attempts to write to addresses in the range 24576 to 65535 will not change the RAM
-    // void write_RAM(uint16_t address,uint16_t new_value) {}
-
-    // *********** disassembler support  ***********
-    //
-    // assembler equivalent of destination, aluop and jump components of a C-instruction
-    // std::string destination(uint16_t destination_bits) {}
-    // std::string aluop(uint16_t aluop_bits) {}
-    // std::string jump(uint16_t jump_bits) {}
 
 /*****************   REPLACE THE FOLLOWING CODE  ******************/
 
+// the C instruction table
+struct CInstructionTable {
+
+    //  The COMP part codes
+    map<uint16_t, string> comp = {
+        {0B0101010,   "0"},                                         {0B0111111,   "1"}, {0B0111010,  "-1"},    
+        {0B0110000,   "A"}, {0B0110011,  "-A"}, {0B0110001,  "!A"}, {0B0110111, "A+1"}, {0B0110010, "A-1"},
+        {0B0001100,   "D"}, {0B0001111,  "-D"}, {0B0001101,  "!D"}, {0B0011111, "D+1"}, {0B0001110, "D-1"},
+        {0B1110000,   "M"}, {0B1110011,  "-M"}, {0B1110001,  "!M"}, {0B1110111, "M+1"}, {0B1110010, "M-1"},
+        {0B0000010, "D+A"}, {0B0010011, "D-A"}, {0B0000111, "A-D"}, {0B0000000, "D&A"}, {0B0010101, "D|A"}, 
+        {0B1000010, "D+M"}, {0B1010011, "D-M"}, {0B1000111, "M-D"}, {0B1000000, "D&M"}, {0B1010101, "D|M"},
+    };
+    
+    // The DEST part codes
+    string dest[8] = { "", "M", "D", "MD", "A", "AM", "AD", "AMD" };
+    
+    // The COMP part codes
+    string jump[8] = { "", "JGT", "JEQ", "JGE", "JLT", "JNE", "JLE", "JMP" };
+    
+} CIT;  // the C instruction table
 
 // disassemble an instruction - convert binary to symbolic form
 // A instructions should be "@" followed by the value in decimal
@@ -77,14 +57,25 @@ using namespace Hack_Computer ;
 // omit dest= if all destination bits are 0
 // omit ;jump if all jump bits are 0
 string disassemble_instruction(uint16_t instruction)
-{    
-    if ((instruction & 0x8000) == 0)
+{
+    // A instruction
+    if ((instruction & 0x8000) == 0)                    // 0x8000 == 0B 1000 0000 0000 0000
     {
-        // A instruction
         return "@" + to_string(instruction);
     }
 
-    return "A=D+1;JGT" ;
+    // C instruction
+    if ((instruction & 0xE000) == 0xE000)               // 0xE000 == 0B 1110 0000 0000 0000
+    {
+        uint16_t iComp = (instruction & 0x1FC0) >> 6;   // 0x1FC0 == 0B 0001 1111 1100 0000
+        uint16_t iDest = (instruction & 0x0038) >> 3;   // 0x0038 == 0B 0000 0000 0011 1000
+        uint16_t iJump = (instruction & 0x0007);        // 0x0007 == 0B 0000 0000 0000 0111
+        
+        return CIT.dest[iDest] + (iDest != 0 ? "=" : "") + CIT.comp[iComp] + (iJump !=0 ? ";" : "") + CIT.jump[iJump];
+    }
+
+    // If you do not have an A-instruction or a C-instruction return "** illegal instruction **".
+    return "** illegal instruction **";
 }
 
 // emulate a cpu instruction - the Hack Computer has been initialised
@@ -95,9 +86,9 @@ static void emulate_instruction()
     uint16_t pc = read_PC();
     uint16_t instruction = read_ROM(pc);
     
+    // A instruction
     if ((instruction & 0x8000) == 0)
     {
-        // A instruction
         write_A(instruction);
     }
 
