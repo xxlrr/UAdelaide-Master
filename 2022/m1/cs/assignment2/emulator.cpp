@@ -156,7 +156,7 @@ static bool emulate_comp(uint16_t instruction, int16_t* result)
         *result = read_D() | read_RAM(read_A());
         break;
 
-    case 0B0001010: // .D. ???? illegel instruction? I don't why do this.
+    case 0B0001010: // .D. ???? illegel instruction? I don't why do this?
         *result = read_D();
         break;
     case 0B1111111: // .1. ???? illegel instruction? I don't why do this?
@@ -164,7 +164,7 @@ static bool emulate_comp(uint16_t instruction, int16_t* result)
         break;
 
     default:
-        return false;
+        return false; // illegel instruction, do nothing.
     }
 
     return true;
@@ -272,10 +272,8 @@ static void emulate_instruction()
     {
         int16_t value;
         if (emulate_comp(instruction, &value))
-        {
             emulate_dest(instruction, value);
-            emulate_jump(instruction, value);
-        }
+        emulate_jump(instruction, value);
     }
 }
 
