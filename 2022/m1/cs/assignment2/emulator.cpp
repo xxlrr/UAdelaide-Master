@@ -1,4 +1,12 @@
-// emulate executing Hack CPU instructions
+/**
+ * @file emulator.cpp
+ * @author Hongxing Hao (a1845302@adelaide.edu.au)
+ * @brief emulate executing Hack CPU instructions
+ * @version 0.1
+ * @date 2022-05-19
+ * 
+ * @copyright Copyright (c) 2022 
+ */
 #include "iobuffer.h"
 #include "symbols.h"
 #include "hack_computer.h"
@@ -126,9 +134,14 @@ static int emulate_comp(uint16_t instruction)
             return read_D() & read_RAM(read_A());
         case 0B1010101: // "D|M"
             return read_D() | read_RAM(read_A());
+
+        case 0B1111111: // .1. ???? I don't know what's this?
+            return 1;
+
+        default:
+            return 1;   // error instruction, return what? 
     }
 
-    return iComp;
 }
 
 // emulate the DEST part of a cpu instruction.
