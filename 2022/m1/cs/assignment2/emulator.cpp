@@ -78,6 +78,100 @@ string disassemble_instruction(uint16_t instruction)
     return "** illegal instruction **";
 }
 
+// emulate the COMP part of a cpu instruction.
+// other parts are ignored.
+static uint16_t emulate_comp(uint16_t instruction)
+{
+    uint16_t iComp = (instruction & 0x1FC0) >> 6;   // 0x1FC0 == 0B 0001 1111 1100 0000
+
+    switch(iComp)
+    {
+        case 0B0101010: //   "0"
+            return 0;
+        case 0B0111111: //   "1"
+            return 1;
+        case 0B0111010: //  "-1"
+            return -1;
+
+        case 0B0110000: //   "A"
+            return read_A();
+        case 0B0110011: //  "-A"
+            return -read_A();
+        case 0B0110001: //  "!A"
+            return !read_A();
+        case 0B0110111: // "A+1"
+            return read_A() + 1;
+        case 0B0110010: // "A-1"
+            return read_A() - 1;
+
+        case 0B0001100: //   "D"
+            return read_D();
+        case 0B0001111: //  "-D"
+            return -read_D();
+        case 0B0001101: //  "!D"
+            return !read_D();
+        case 0B0011111: // "D+1"
+            return read_D() + 1;
+        case 0B0001110: // "D-1"
+            return read_D() - 1;
+
+        case 0B1110000: //   "M"
+            return read_RAM(read_A());
+        case 0B1110011: //  "-M"
+            return -read_RAM(read_A());
+        case 0B1110001: //  "!M"
+            return !read_RAM(read_A());
+        case 0B1110111: // "M+1"
+            return read_RAM(read_A()) + 1;
+        case 0B1110010: // "M-1"
+            return read_RAM(read_A()) - 1;
+
+        case 0B0000010: // "D+A"
+            return read_D() + read_A();
+        case 0B0010011: // "D-A"
+            return read_D() - read_A();
+        case 0B0000111: // "A-D"
+            return read_A() - read_D();
+        case 0B0000000: // "D&A"
+            return read_D() & read_A();
+        case 0B0010101: // "D|A"
+            return read_D() | read_A();
+
+        case 0B1000010: // "D+M"
+            return read_D() + read_RAM(read_A());
+        case 0B1010011: // "D-M"
+            return read_D() - read_RAM(read_A());
+        case 0B1000111: // "M-D"
+            return read_RAM(read_A()) - read_D();
+        case 0B1000000: // "D&M"
+            return read_D() & read_RAM(read_A());
+        case 0B1010101: // "D|M"
+            return read_D() | read_RAM(read_A());
+    }
+
+    return 0;
+}
+
+// emulate the DEST part of a cpu instruction.
+// other parts are ignored.
+static void emulate_dest(uint16_t instruction, uint16_t operands)
+{
+    switch(instruction & 0x1FC0)    // 0x0038 == 0B 0000 0000 0011 1000
+    {
+
+    }
+}
+
+// emulate the JUMP part of a cpu instruction.
+// other parts are ignored.
+static void emulate_jump(uint16_t instruction, uint16_t operands)
+{
+    switch(instruction & 0x1FC0)    // 0x0007 == 0B 0000 0000 0000 0111
+    {
+
+    }
+}
+
 // emulate a cpu instruction - the Hack Computer has been initialised
 // the PC contains the address in ROM of the instruction to execute
 // if you want to produce additional output, use write_to_traces()
