@@ -30,27 +30,6 @@ using namespace Hack_Computer ;
 
 /*****************   REPLACE THE FOLLOWING CODE  ******************/
 
-// the C instruction table
-struct CInstructionTable {
-
-    //  The COMP part codes
-    map<uint16_t, string> comp = {
-        {0B0101010,   "0"},                                         {0B0111111,   "1"}, {0B0111010,  "-1"},    
-        {0B0110000,   "A"}, {0B0110011,  "-A"}, {0B0110001,  "!A"}, {0B0110111, "A+1"}, {0B0110010, "A-1"},
-        {0B0001100,   "D"}, {0B0001111,  "-D"}, {0B0001101,  "!D"}, {0B0011111, "D+1"}, {0B0001110, "D-1"},
-        {0B1110000,   "M"}, {0B1110011,  "-M"}, {0B1110001,  "!M"}, {0B1110111, "M+1"}, {0B1110010, "M-1"},
-        {0B0000010, "D+A"}, {0B0010011, "D-A"}, {0B0000111, "A-D"}, {0B0000000, "D&A"}, {0B0010101, "D|A"}, 
-        {0B1000010, "D+M"}, {0B1010011, "D-M"}, {0B1000111, "M-D"}, {0B1000000, "D&M"}, {0B1010101, "D|M"},
-    };
-    
-    // The DEST part codes
-    string dest[8] = { "", "M", "D", "DM", "A", "AM", "AD", "AMD" };
-    
-    // The COMP part codes
-    string jump[8] = { "", "JGT", "JEQ", "JGE", "JLT", "JNE", "JLE", "JMP" };
-    
-} CIT;  // the C instruction table
-
 // disassemble an instruction - convert binary to symbolic form
 // A instructions should be "@" followed by the value in decimal
 // C instructions should be dest=alu;jump
@@ -71,7 +50,7 @@ string disassemble_instruction(uint16_t instruction)
         uint16_t iDest = (instruction & 0x0038) >> 3;   // 0x0038 == 0B 0000 0000 0011 1000
         uint16_t iJump = (instruction & 0x0007);        // 0x0007 == 0B 0000 0000 0000 0111
         
-        return CIT.dest[iDest] + (iDest != 0 ? "=" : "") + CIT.comp[iComp] + (iJump !=0 ? ";" : "") + CIT.jump[iJump];
+        return destination(iDest) + aluop(iComp) + jump(iJump);
     }
 
     // If you do not have an A-instruction or a C-instruction return "** illegal instruction **".
@@ -82,7 +61,7 @@ string disassemble_instruction(uint16_t instruction)
 // other parts are ignored.
 static int emulate_comp(uint16_t instruction)
 {
-    uint16_t iComp = (instruction & 0x1FC0) >> 6;   // 0x1FC0 == 0B 0001 1111 1100 0000
+    int16_t iComp = (instruction & 0x1FC0) >> 6;   // 0x1FC0 == 0B 0001 1111 1100 0000
 
     switch(iComp)
     {
@@ -250,7 +229,7 @@ static void emulate_instruction()
     // C instruction
     else if ((instruction & 0xE000) == 0xE000)
     {
-        int value = emulate_comp(instruction);
+        int16_t value = emulate_comp(instruction);
         emulate_dest(instruction, value);
         emulate_jump(instruction, value);
     }
