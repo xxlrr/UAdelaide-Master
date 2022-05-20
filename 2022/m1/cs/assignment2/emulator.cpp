@@ -13,7 +13,6 @@
 #include <bitset>
 #include <vector>
 #include <iostream>
-#include <map>
 
 // to make out programs a bit neater
 using namespace std;
@@ -22,36 +21,22 @@ using namespace CS_IO_Buffers;
 using namespace CS_Symbol_Tables;
 using namespace Hack_Computer;
 
-// This program must emulate the execution of Hack CPU instructions
-//
-// To read from registers A, D or PC, use read_A(), read_D() or read_PC()
-// To write to registers A, D or PC, use write_A(value), write_D(value) or write_PC(value)
-//
-// To read from ROM use read_ROM(address)
-// To read from RAM use read_RAM(address)
-// To write to RAM use write_RAM(address,value)
-//
-// All values returned by a read_*() function are 16-bit unsigned integers
-// All parameters passed to a write_*() function are 16-bit unsigned integers
-//
-
-/*****************   REPLACE THE FOLLOWING CODE  ******************/
 
 // disassemble an instruction - convert binary to symbolic form
 string disassemble_instruction(uint16_t instruction)
 {
     // A instruction
-    if ((instruction & 0x8000) == 0) // 0x8000 == 0B 1000 0000 0000 0000
+    if ((instruction & 0x8000) == 0x0000)        // 0x8000 == 0B 1000 0000 0000 0000
     {
         return "@" + to_string(instruction);
     }
 
     // C instruction
-    if ((instruction & 0xE000) == 0xE000) // 0xE000 == 0B 1110 0000 0000 0000
+    if ((instruction & 0xE000) == 0xE000)        // 0xE000 == 0B 1110 0000 0000 0000
     {
-        uint16_t iComp = (instruction & 0x1FC0) >> 6; // 0x1FC0 == 0B 0001 1111 1100 0000
-        uint16_t iDest = (instruction & 0x0038) >> 3; // 0x0038 == 0B 0000 0000 0011 1000
-        uint16_t iJump = (instruction & 0x0007);      // 0x0007 == 0B 0000 0000 0000 0111
+        uint16_t iComp = (instruction & 0x1FC0) >> 6;        // 0x1FC0 == 0B 0001 1111 1100 0000
+        uint16_t iDest = (instruction & 0x0038) >> 3;        // 0x0038 == 0B 0000 0000 0011 1000
+        uint16_t iJump = (instruction & 0x0007);             // 0x0007 == 0B 0000 0000 0000 0111
 
         return destination(iDest) + aluop(iComp) + jump(iJump);
     }
@@ -62,109 +47,109 @@ string disassemble_instruction(uint16_t instruction)
 // emulate the COMP part of a cpu instruction.
 static bool emulate_comp(uint16_t instruction, int16_t* result)
 {
-    uint16_t iComp = (instruction & 0x1FC0) >> 6; // 0x1FC0 == 0B 0001 1111 1100 0000
+    uint16_t iComp = (instruction & 0x1FC0) >> 6;        // 0x1FC0 == 0B 0001 1111 1100 0000
 
     switch (iComp)
     {
-    case 0B0101010: //   "0"
+    case 0B0101010:        //   "0"
         *result = 0;
         break;
-    case 0B0111111: //   "1"
+    case 0B0111111:        //   "1"
         *result = 1;
         break;
-    case 0B0111010: //  "-1"
+    case 0B0111010:        //  "-1"
         *result = -1;
         break;
 
-    case 0B0110000: //   "A"
+    case 0B0110000:        //   "A"
         *result = read_A();
         break;
-    case 0B0110011: //  "-A"
+    case 0B0110011:        //  "-A"
         *result = -read_A();
         break;
-    case 0B0110001: //  "!A"
+    case 0B0110001:        //  "!A"
         *result = ~read_A();
         break;
-    case 0B0110111: // "A+1"
+    case 0B0110111:        // "A+1"
         *result = read_A() + 1;
         break;
-    case 0B0110010: // "A-1"
+    case 0B0110010:        // "A-1"
         *result = read_A() - 1;
         break;
 
-    case 0B0001100: //   "D"
+    case 0B0001100:        //   "D"
         *result = read_D();
         break;
-    case 0B0001111: //  "-D"
+    case 0B0001111:        //  "-D"
         *result = -read_D();
         break;
-    case 0B0001101: //  "!D"
+    case 0B0001101:        //  "!D"
         *result = ~read_D();
         break;
-    case 0B0011111: // "D+1"
+    case 0B0011111:        // "D+1"
         *result = read_D() + 1;
         break;
-    case 0B0001110: // "D-1"
+    case 0B0001110:        // "D-1"
         *result = read_D() - 1;
         break;
 
-    case 0B1110000: //   "M"
+    case 0B1110000:        //   "M"
         *result = read_RAM(read_A());
         break;
-    case 0B1110011: //  "-M"
+    case 0B1110011:        //  "-M"
         *result = -read_RAM(read_A());
         break;
-    case 0B1110001: //  "!M"
+    case 0B1110001:        //  "!M"
         *result = ~read_RAM(read_A());
         break;
-    case 0B1110111: // "M+1"
+    case 0B1110111:        // "M+1"
         *result = read_RAM(read_A()) + 1;
         break;
-    case 0B1110010: // "M-1"
+    case 0B1110010:        // "M-1"
         *result = read_RAM(read_A()) - 1;
         break;
 
-    case 0B0000010: // "D+A"
+    case 0B0000010:        // "D+A"
         *result = read_D() + read_A();
         break;
-    case 0B0010011: // "D-A"
+    case 0B0010011:        // "D-A"
         *result = read_D() - read_A();
         break;
-    case 0B0000111: // "A-D"
+    case 0B0000111:        // "A-D"
         *result = read_A() - read_D();
         break;
-    case 0B0000000: // "D&A"
+    case 0B0000000:        // "D&A"
         *result = read_D() & read_A();
         break;
-    case 0B0010101: // "D|A"
+    case 0B0010101:        // "D|A"
         *result = read_D() | read_A();
         break;
 
-    case 0B1000010: // "D+M"
+    case 0B1000010:        // "D+M"
         *result = read_D() + read_RAM(read_A());
         break;
-    case 0B1010011: // "D-M"
+    case 0B1010011:        // "D-M"
         *result = read_D() - read_RAM(read_A());
         break;
-    case 0B1000111: // "M-D"
+    case 0B1000111:        // "M-D"
         *result = read_RAM(read_A()) - read_D();
         break;
-    case 0B1000000: // "D&M"
+    case 0B1000000:        // "D&M"
         *result = read_D() & read_RAM(read_A());
         break;
-    case 0B1010101: // "D|M"
+    case 0B1010101:        // "D|M"
         *result = read_D() | read_RAM(read_A());
         break;
 
-    case 0B0001010: // .D. ???? illegel instruction? I don't why do this?
+    case 0B0001010:        // .D. ???? illegel instruction? I don't why do this?
         *result = read_D();
         break;
-    case 0B1111111: // .1. ???? illegel instruction? I don't why do this?
+    case 0B1111111:        // .1. ???? illegel instruction? I don't why do this?
         *result = 1;
         break;
 
     default:
-        return false; // illegel instruction, do nothing.
+        return false;        // illegel instruction, do nothing.
     }
 
     return true;
@@ -174,34 +159,34 @@ static bool emulate_comp(uint16_t instruction, int16_t* result)
 // other parts are ignored.
 static void emulate_dest(uint16_t instruction, int16_t operands)
 {
-    uint16_t iDest = (instruction & 0x0038) >> 3; // 0x0038 == 0B 0000 0000 0011 1000
+    uint16_t iDest = (instruction & 0x0038) >> 3;        // 0x0038 == 0B 0000 0000 0011 1000
 
     switch (iDest)
     {
-    case 0B000: // ""
+    case 0B000:        // ""
         break;
-    case 0B001: // "M"
+    case 0B001:        // "M"
         write_RAM(read_A(), operands);
         break;
-    case 0B010: // "D"
+    case 0B010:        // "D"
         write_D(operands);
         break;
-    case 0B011: // "MD"
+    case 0B011:        // "MD"
         write_RAM(read_A(), operands);
         write_D(operands);
         break;
-    case 0B100: // "A"
+    case 0B100:        // "A"
         write_A(operands);
         break;
-    case 0B101: // "AM"
+    case 0B101:        // "AM"
         write_A(operands);
         write_RAM(read_A(), operands);
         break;
-    case 0B110: // "AD"
+    case 0B110:        // "AD"
         write_A(operands);
         write_D(operands);
         break;
-    case 0B111: // "AMD"
+    case 0B111:        // "AMD"
         write_A(operands);
         write_RAM(read_A(), operands);
         write_D(operands);
@@ -213,38 +198,38 @@ static void emulate_dest(uint16_t instruction, int16_t operands)
 // other parts are ignored.
 static void emulate_jump(uint16_t instruction, int16_t operands)
 {
-    uint16_t iJump = (instruction & 0x0007); // 0x0007 == 0B 0000 0000 0000 0111
+    uint16_t iJump = (instruction & 0x0007);        // 0x0007 == 0B 0000 0000 0000 0111
     uint16_t pc = read_PC() + 1;
 
     switch (iJump)
     {
-    case 0B000: // ""
+    case 0B000:        // ""
         break;
-    case 0B001: // "JGT"
+    case 0B001:        // "JGT"
         if (operands > 0)
             pc = read_A();
         break;
-    case 0B010: // "JEQ"
+    case 0B010:        // "JEQ"
         if (operands == 0)
             pc = read_A();
         break;
-    case 0B011: // "JGE"
+    case 0B011:        // "JGE"
         if (operands >= 0)
             pc = read_A();
         break;
-    case 0B100: // "JLT"
+    case 0B100:        // "JLT"
         if (operands < 0)
             pc = read_A();
         break;
-    case 0B101: // "JNE"
+    case 0B101:        // "JNE"
         if (operands != 0)
             pc = read_A();
         break;
-    case 0B110: // "JLE"
+    case 0B110:        // "JLE"
         if (operands <= 0)
             pc = read_A();
         break;
-    case 0B111: // "JMP"
+    case 0B111:        // "JMP"
         pc = read_A();
         break;
     }
@@ -275,6 +260,8 @@ static void emulate_instruction()
             emulate_dest(instruction, value);
         emulate_jump(instruction, value);
     }
+
+    // else do nothing
 }
 
 /*****************        DOWN TO HERE         ******************/
