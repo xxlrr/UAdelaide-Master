@@ -165,19 +165,19 @@ namespace Workshop_Tokeniser
         case '/':
             return tk_divide;
         case '<':
-	    if(spelling[1] == '=')
+	    if(spelling == "<=")
                 return tk_le;
             return tk_lt;
         case '=':
-            if(spelling[1] == '=')
+            if(spelling == "==")
                 return tk_eq;
             return tk_assign;
         case '!':
-	    if(spelling[1] == '=')
+	    if(spelling == "!=")
                 return tk_ne;
             return tk_not;
         case '>':
-	    if(spelling[1] == '=')
+	    if(spelling == ">=")
                 return tk_ge;
             return tk_gt;
         case '@':
@@ -198,7 +198,6 @@ namespace Workshop_Tokeniser
             return tk_dquote;
         case '(':
             return tk_label;
-                
         default:
             return tk_oops ;
         }
