@@ -77,40 +77,12 @@ static void emulate_dest(uint16_t instruction, int16_t operand)
 static void emulate_jump(uint16_t instruction, int16_t operand)
 {
     uint16_t iJump = (instruction & 0x0007);        // 0x0007 == 0B 0000 0000 0000 0111
-    uint16_t next_pc = read_PC() + 1;
-
-    switch (iJump)
-    {
-    case 0B000:        // ""
-        break;
-    case 0B001:        // "JGT"
-        if (operand > 0)
-            next_pc = read_A();
-        break;
-    case 0B010:        // "JEQ"
-        if (operand == 0)
-            next_pc = read_A();
-        break;
-    case 0B011:        // "JGE"
-        if (operand >= 0)
-            next_pc = read_A();
-        break;
-    case 0B100:        // "JLT"
-        if (operand < 0)
-            next_pc = read_A();
-        break;
-    case 0B101:        // "JNE"
-        if (operand != 0)
-            next_pc = read_A();
-        break;
-    case 0B110:        // "JLE"
-        if (operand <= 0)
-            next_pc = read_A();
-        break;
-    case 0B111:        // "JMP"
+    
+    uint16_t next_pc;
+    if ( ((iJump & 0B100) && operand < 0) || ((iJump & 0B010) && operand == 0) || ((iJump & 0B001) && operand > 0) )
         next_pc = read_A();
-        break;
-    }
+    else
+        next_pc = read_PC() + 1;
 
     write_PC(next_pc);
 }
