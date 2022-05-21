@@ -45,196 +45,74 @@ string disassemble_instruction(uint16_t instruction)
 }
 
 // emulate the COMP part of a cpu instruction.
-static bool emulate_comp(uint16_t instruction, int16_t* result)
+static int16_t emulate_comp(uint16_t instruction)
 {
     uint16_t iComp = (instruction & 0x1FC0) >> 6;        // 0x1FC0 == 0B 0001 1111 1100 0000
+    
+    uint16_t x=read_D(), y=read_A(), o;
+    y = (iComp & 0B1000000) ? read_RAM(y) : y;
+    x = (iComp & 0B0100000) ?  0 : x;
+    x = (iComp & 0B0010000) ? ~x : x;
+    y = (iComp & 0B0001000) ?  0 : y;
+    y = (iComp & 0B0000100) ? ~y : y;
+    o = (iComp & 0B0000010) ? (x + y) : ( x & y );
+    o = (iComp & 0B0000001) ? ~o : o;
 
-    switch (iComp)
-    {
-    case 0B0101010:        //   "0"
-        *result = 0;
-        break;
-    case 0B0111111:        //   "1"
-        *result = 1;
-        break;
-    case 0B0111010:        //  "-1"
-        *result = -1;
-        break;
-
-    case 0B0110000:        //   "A"
-        *result = read_A();
-        break;
-    case 0B0110011:        //  "-A"
-        *result = -read_A();
-        break;
-    case 0B0110001:        //  "!A"
-        *result = ~read_A();
-        break;
-    case 0B0110111:        // "A+1"
-        *result = read_A() + 1;
-        break;
-    case 0B0110010:        // "A-1"
-        *result = read_A() - 1;
-        break;
-
-    case 0B0001100:        //   "D"
-        *result = read_D();
-        break;
-    case 0B0001111:        //  "-D"
-        *result = -read_D();
-        break;
-    case 0B0001101:        //  "!D"
-        *result = ~read_D();
-        break;
-    case 0B0011111:        // "D+1"
-        *result = read_D() + 1;
-        break;
-    case 0B0001110:        // "D-1"
-        *result = read_D() - 1;
-        break;
-
-    case 0B1110000:        //   "M"
-        *result = read_RAM(read_A());
-        break;
-    case 0B1110011:        //  "-M"
-        *result = -read_RAM(read_A());
-        break;
-    case 0B1110001:        //  "!M"
-        *result = ~read_RAM(read_A());
-        break;
-    case 0B1110111:        // "M+1"
-        *result = read_RAM(read_A()) + 1;
-        break;
-    case 0B1110010:        // "M-1"
-        *result = read_RAM(read_A()) - 1;
-        break;
-
-    case 0B0000010:        // "D+A"
-        *result = read_D() + read_A();
-        break;
-    case 0B0010011:        // "D-A"
-        *result = read_D() - read_A();
-        break;
-    case 0B0000111:        // "A-D"
-        *result = read_A() - read_D();
-        break;
-    case 0B0000000:        // "D&A"
-        *result = read_D() & read_A();
-        break;
-    case 0B0010101:        // "D|A"
-        *result = read_D() | read_A();
-        break;
-
-    case 0B1000010:        // "D+M"
-        *result = read_D() + read_RAM(read_A());
-        break;
-    case 0B1010011:        // "D-M"
-        *result = read_D() - read_RAM(read_A());
-        break;
-    case 0B1000111:        // "M-D"
-        *result = read_RAM(read_A()) - read_D();
-        break;
-    case 0B1000000:        // "D&M"
-        *result = read_D() & read_RAM(read_A());
-        break;
-    case 0B1010101:        // "D|M"
-        *result = read_D() | read_RAM(read_A());
-        break;
-
-    case 0B0001010:        // .D. ???? illegel instruction? I don't why do this?
-        *result = read_D();
-        break;
-    case 0B1111111:        // .1. ???? illegel instruction? I don't why do this?
-        *result = 1;
-        break;
-
-    default:
-        return false;        // illegel instruction, do nothing.
-    }
-
-    return true;
+    return o;
 }
 
 // emulate the DEST part of a cpu instruction.
 // other parts are ignored.
-static void emulate_dest(uint16_t instruction, int16_t operands)
+static void emulate_dest(uint16_t instruction, int16_t operand)
 {
     uint16_t iDest = (instruction & 0x0038) >> 3;        // 0x0038 == 0B 0000 0000 0011 1000
 
-    switch (iDest)
-    {
-    case 0B000:        // ""
-        break;
-    case 0B001:        // "M"
-        write_RAM(read_A(), operands);
-        break;
-    case 0B010:        // "D"
-        write_D(operands);
-        break;
-    case 0B011:        // "MD"
-        write_RAM(read_A(), operands);
-        write_D(operands);
-        break;
-    case 0B100:        // "A"
-        write_A(operands);
-        break;
-    case 0B101:        // "AM"
-        write_A(operands);
-        write_RAM(read_A(), operands);
-        break;
-    case 0B110:        // "AD"
-        write_A(operands);
-        write_D(operands);
-        break;
-    case 0B111:        // "AMD"
-        write_A(operands);
-        write_RAM(read_A(), operands);
-        write_D(operands);
-        break;
-    }
+    if (iDest & 0B100) write_A(operand);
+    if (iDest & 0B010) write_D(operand);
+    if (iDest & 0B001) write_RAM(read_A(), operand);
 }
 
 // emulate the JUMP part of a cpu instruction.
 // other parts are ignored.
-static void emulate_jump(uint16_t instruction, int16_t operands)
+static void emulate_jump(uint16_t instruction, int16_t operand)
 {
     uint16_t iJump = (instruction & 0x0007);        // 0x0007 == 0B 0000 0000 0000 0111
-    uint16_t pc = read_PC() + 1;
+    uint16_t next_pc = read_PC() + 1;
 
     switch (iJump)
     {
     case 0B000:        // ""
         break;
     case 0B001:        // "JGT"
-        if (operands > 0)
-            pc = read_A();
+        if (operand > 0)
+            next_pc = read_A();
         break;
     case 0B010:        // "JEQ"
-        if (operands == 0)
-            pc = read_A();
+        if (operand == 0)
+            next_pc = read_A();
         break;
     case 0B011:        // "JGE"
-        if (operands >= 0)
-            pc = read_A();
+        if (operand >= 0)
+            next_pc = read_A();
         break;
     case 0B100:        // "JLT"
-        if (operands < 0)
-            pc = read_A();
+        if (operand < 0)
+            next_pc = read_A();
         break;
     case 0B101:        // "JNE"
-        if (operands != 0)
-            pc = read_A();
+        if (operand != 0)
+            next_pc = read_A();
         break;
     case 0B110:        // "JLE"
-        if (operands <= 0)
-            pc = read_A();
+        if (operand <= 0)
+            next_pc = read_A();
         break;
     case 0B111:        // "JMP"
-        pc = read_A();
+        next_pc = read_A();
         break;
     }
 
-    write_PC(pc);
+    write_PC(next_pc);
 }
 
 // emulate a cpu instruction - the Hack Computer has been initialised
@@ -255,9 +133,8 @@ static void emulate_instruction()
     // C instruction
     else if ((instruction & 0xE000) == 0xE000)
     {
-        int16_t value;
-        if (emulate_comp(instruction, &value))
-            emulate_dest(instruction, value);
+        int16_t value = emulate_comp(instruction);
+        emulate_dest(instruction, value);
         emulate_jump(instruction, value);
     }
 
