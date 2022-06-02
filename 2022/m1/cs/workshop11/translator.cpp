@@ -157,9 +157,16 @@ static void walk_while(ast n)
     push_error_context("walk_while()") ;
 
     string label = to_string(while_counter++) ;
+    write_to_output("label WHILE_EXP" + label + "\n");
 
     walk_expression(get_while_condition(n)) ;
+    write_to_output("not\n");
+    write_to_output("if-goto WHILE_END" + label + "\n");
     walk_sequence(get_while_body(n)) ;
+    write_to_output("goto WHILE_EXP" + label + "\n");
+
+
+    write_to_output("label WHILE_END" + label + "\n");
 
     pop_error_context() ;
 }
@@ -171,8 +178,18 @@ static void walk_if(ast n)
 
     string label = to_string(if_counter++) ;
 
-    walk_expression(get_if_condition(n)) ;
-    walk_sequence(get_if_if_true(n)) ;
+    walk_expression(get_if_condition(n));
+
+    write_to_output("if-goto IF_TRUE" + label + "\n");
+    write_to_output("goto IF_FALSE" + label + "\n");
+    write_to_output("label IF_TRUE" + label + "\n");
+
+    walk_sequence(get_if_if_true(n));
+    // write_to_output("goto IF_FALSE" + label + "\n");
+    write_to_output("label IF_FALSE" + label + "\n");
+
+
+
 
     pop_error_context() ;
 }
@@ -185,8 +202,15 @@ static void walk_if_else(ast n)
     string label = to_string(if_counter++) ;
 
     walk_expression(get_if_else_condition(n)) ;
+    write_to_output("if-goto IF_TRUE" + label + "\n");
+    write_to_output("goto IF_FALSE" + label + "\n");
+    write_to_output("label IF_TRUE" + label + "\n");
     walk_sequence(get_if_else_if_true(n)) ;
+    write_to_output("goto IF_END" + label + "\n");
+
+    write_to_output("label IF_FALSE" + label + "\n");
     walk_sequence(get_if_else_if_false(n)) ;
+    write_to_output("label IF_END" + label + "\n");
 
     pop_error_context() ;
 }
@@ -196,8 +220,13 @@ static void walk_let(ast n)
 {
     push_error_context("walk_let()") ;
 
-    //ast var = get_let_variable(n) ;
+    ast var = get_let_variable(n) ;
+    string segment = get_variable_segment(var);
+    int offset = get_variable_offset(var);
+
     walk_expression(get_let_expression(n)) ;
+
+    write_to_output("pop " + segment + " " + std::to_string(offset) + "\n");
 
     pop_error_context() ;
 }
@@ -229,6 +258,7 @@ static void walk_expression(ast n)
         walk_term(get_infix_op_lhs(expr)) ;
         walk_term(get_infix_op_rhs(expr)) ;
         string op = get_infix_op_op(expr) ;
+        write_to_output(translate_op(op) + "\n");
     }
     else
     {
@@ -249,9 +279,18 @@ static void walk_term(ast n)
     switch(ast_node_kind(term))
     {
     case ast_variable:
-        break ;
+    {
+        string segment = get_variable_segment(term) ;
+        int local_offset = get_variable_offset(term) ;
+        write_to_output("push " + segment + " " + std::to_string(local_offset) + "\n");
+        break;
+    }
     case ast_int:
+    {
+        int int_const = get_int_constant(term);
+        write_to_output("push constant " + std::to_string(int_const) + "\n");
         break ;
+    }
     default:
         fatal_error(0,"Unknown kind of term node found") ;
         break ;
