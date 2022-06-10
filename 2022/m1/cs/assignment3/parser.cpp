@@ -622,8 +622,27 @@ static ast parse_if()
     push_error_context("parse_if()") ;
 
     // add code here ...
+    mustbe(tk_if);
+    mustbe(tk_lrb);
+    ast condition = parse_expr();
+    mustbe(tk_rrb);
+    mustbe(tk_lcb);
+    ast if_true = parse_statements();
+    mustbe(tk_rcb);
 
-    ast ret = create_empty() ;
+    ast ret = nullptr;
+    if (have_next(tk_else))
+    {
+        mustbe(tk_lcb);
+        ast if_false = parse_statements();
+        mustbe(tk_rcb);
+        ret = create_if_else(condition, if_true, if_false);
+    }
+    else
+    {
+        ret = create_if(condition, if_true);
+    }
+
     pop_error_context() ;
     return ret ;
 }
@@ -638,8 +657,15 @@ static ast parse_while()
     push_error_context("parse_while()") ;
 
     // add code here ...
+    mustbe(tk_while);
+    mustbe(tk_lrb);
+    ast condition = parse_expr();
+    mustbe(tk_rrb);
+    mustbe(tk_lcb);
+    ast body = parse_statements();
+    mustbe(tk_rcb);
 
-    ast ret = create_empty() ;
+    ast ret = create_while(condition, body);
     pop_error_context() ;
     return ret ;
 }
@@ -654,8 +680,24 @@ static ast parse_do()
     push_error_context("parse_do()") ;
 
     // add code here ...
+    mustbe(tk_do);
 
-    ast ret = create_empty() ;
+    ast call = nullptr;
+    switch(token_kind())
+    {
+    case tk_identifier:
+        call = parse_void_var_call();
+        break;
+    case tk_this:
+        call = parse_void_this_call();
+        break;
+    default:
+        did_not_find(tg_identifier);
+        break;
+    }
+    mustbe(tk_semi);
+
+    ast ret = create_do(call);
     pop_error_context() ;
     return ret ;
 }
@@ -679,8 +721,22 @@ static ast parse_void_var_call()
     push_error_context("parse_void_var_call()") ;
 
     // add code here ...
+    Token name = mustbe(tk_identifier);
 
-    ast ret = create_empty() ;
+    ast ret = nullptr;
+    switch (token_kind())
+    {
+    case tk_fn:
+        ret = create_call_as_function(name.str, parse_fn_call());
+        break;
+    case tk_stop:
+        ret = create_call_as_method(name.str, parse_method_call());
+        break;
+    default:
+        did_not_find(tg_stop_fn);
+        break;
+    }
+
     pop_error_context() ;
     return ret ;
 }
