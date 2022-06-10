@@ -931,8 +931,26 @@ static ast parse_var_term()
     push_error_context("parse_var_term()") ;
 
     // add code here ...
+    Token tk_id = mustbe(tk_identifier);
+    ast var = lookup_variable_fatal(tk_id);
 
-    ast ret = create_empty() ;
+    ast ret = nullptr;
+    switch(token_kind())
+    {
+    case tk_lsb:
+        ret = create_array_index(var, parse_index());
+        break;
+    case tk_fn:
+        ret = create_call_as_function(token_spelling(tk_id), parse_fn_call());
+        break;
+    case tk_stop:
+        ret = create_call_as_method(get_var_type(var), var, parse_method_call());
+        break;
+    default:
+        ret = var;
+        break;
+    }
+
     pop_error_context() ;
     return ret ;
 }
@@ -953,8 +971,17 @@ static ast parse_this_term()
     push_error_context("parse_this_term()") ;
 
     // add code here ...
+    mustbe(tk_this);
 
-    ast ret = create_empty() ;
+    //  ret is a this object.
+    ast ret = create_this();
+    if (have(tk_stop))
+    {
+        string class_name = get_var_type(ret);
+        ast subr_call = parse_method_call();
+        ret = create_call_as_method(class_name, ret, subr_call);
+    }
+
     pop_error_context() ;
     return ret ;
 }
@@ -966,8 +993,11 @@ static ast parse_index()
     push_error_context("parse_index()") ;
 
     // add code here ...
+    mustbe(tk_lsb);
+    ast expr = parse_expr();
+    mustbe(tk_rsb);
 
-    ast ret = create_empty() ;
+    ast ret = expr;
     pop_error_context() ;
     return ret ;
 }
@@ -983,8 +1013,13 @@ static ast parse_fn_call()
     push_error_context("parse_fn_call()") ;
 
     // add code here ...
+    mustbe(tk_fn);
+    string subr_name = token_spelling(mustbe(tk_identifier));
+    mustbe(tk_lrb);
+    ast expr_list = parse_expr_list();
+    mustbe(tk_rrb);
 
-    ast ret = create_empty() ;
+    ast ret = create_subr_call(subr_name, expr_list);
     pop_error_context() ;
     return ret ;
 }
@@ -1000,8 +1035,13 @@ static ast parse_method_call()
     push_error_context("parse_method_call()") ;
 
     // add code here ...
+    mustbe(tk_stop);
+    string subr_name = token_spelling(mustbe(tk_identifier));
+    mustbe(tk_lrb);
+    ast expr_list = parse_expr_list();
+    mustbe(tk_rrb);
 
-    ast ret = create_empty() ;
+    ast ret = create_subr_call(subr_name, expr_list);
     pop_error_context() ;
     return ret ;
 }
@@ -1015,8 +1055,17 @@ static ast parse_expr_list()
     push_error_context("parse_expr_list()") ;
 
     // add code here ...
+    vector<ast> exprs;
+    if (have(tg_term))
+    {
+        exprs.push_back(parse_expr());
+        while (have_next(tk_comma))
+        {
+            exprs.push_back(parse_expr());
+        }
+    }
 
-    ast ret = create_empty() ;
+    ast ret = create_expr_list(exprs);
     pop_error_context() ;
     return ret ;
 }
