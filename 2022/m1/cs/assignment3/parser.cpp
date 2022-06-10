@@ -1,7 +1,7 @@
 //
 //
-// Author: axxxxxxx
-// Name:   ... ...
+// Author: a1845302
+// Name:   Hongxing Hao
 //
 
 #include <string>
@@ -160,21 +160,28 @@ static ast parse_expr_list() ;
 // create_class(myclassname,statics,fields,class_subrs)
 static ast parse_class()
 {
-    push_error_context("parse_class()") ;
+    push_error_context("parse_class()");
 
     // the class needs new symbol tables for its static and field variables
-    now_parsing = Class ;
-    push_symbol_table() ;
+    now_parsing = Class;
+    push_symbol_table();
 
     // add code here ...
+    mustbe(tk_class);
+    string myclassname = token_spelling(mustbe(tk_identifier));
+    mustbe(tk_lcb);
+    ast statics = parse_static_var_decs();
+    ast fields = parse_field_var_decs();
+    ast class_subrs = parse_subr_decs();
+    mustbe(tk_rcb);
 
     // delete the statics and fields symbol tables
-    pop_symbol_table() ;
-    pop_symbol_table() ;
+    pop_symbol_table();
+    pop_symbol_table();
 
-    ast ret = create_empty() ;
-    pop_error_context() ;
-    return ret ;
+    ast ret = create_class(myclassname, statics, fields, class_subrs);
+    pop_error_context();
+    return ret;
 }
 
 // static_var_decs ::= static_var_dec*
@@ -183,13 +190,18 @@ static ast parse_class()
 //
 static ast parse_static_var_decs()
 {
-    push_error_context("parse_static_var_decs()") ;
+    push_error_context("parse_static_var_decs()");
 
     // add code here ...
+    vector<ast> ast_var_decs;
+    while (have(tk_static))
+    {
+        ast_var_decs.push_back(parse_static_var_dec());
+    }
+    ast ret = create_class_var_decs(ast_var_decs);
 
-    ast ret = create_empty() ;
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 // static_var_dec ::= tk_static tg_type tk_identifier (tk_comma tk_identifier)* tk_semi
@@ -200,13 +212,26 @@ static ast parse_static_var_decs()
 //
 static ast parse_static_var_dec()
 {
-    push_error_context("parse_static_var_dec()") ;
+    push_error_context("parse_static_var_dec()");
 
     // add code here ...
+    vector<ast> decs;
 
-    ast ret = create_empty() ;
-    pop_error_context() ;
-    return ret ;
+    mustbe(tk_static);
+    Token type = mustbe(tg_type);
+    Token name = mustbe(tk_identifier);
+    decs.push_back(declare_variable(name, type, "static"));
+
+    while (have_next(tk_comma))
+    {
+        name = mustbe(tk_identifier);
+        decs.push_back(declare_variable(name, type, "static"));
+    }
+    mustbe(tk_semi);
+
+    ast ret = create_var_decs(decs);
+    pop_error_context();
+    return ret;
 }
 
 // field_var_decs ::= field_var_dec*
@@ -215,16 +240,21 @@ static ast parse_static_var_dec()
 //
 static ast parse_field_var_decs()
 {
-    push_error_context("parse_field_var_decs()") ;
+    push_error_context("parse_field_var_decs()");
 
     // create a new symbol table for the fields - delete at the end of parsing the class
-    push_symbol_table() ;
+    push_symbol_table();
 
     // add code here ...
+    vector<ast> decs;
+    while (have(tk_field))
+    {
+        decs.push_back(parse_field_var_dec());
+    }
 
-    ast ret = create_empty() ;
-    pop_error_context() ;
-    return ret ;
+    ast ret = create_class_var_decs(decs);
+    pop_error_context();
+    return ret;
 }
 
 // field_var_dec ::= tk_field tg_type tk_identifier (tk_comma tk_identifier)* tk_semi
@@ -235,13 +265,25 @@ static ast parse_field_var_decs()
 //
 static ast parse_field_var_dec()
 {
-    push_error_context("parse_field_var_dec()") ;
+    push_error_context("parse_field_var_dec()");
 
     // add code here ...
+    mustbe(tk_field);
+    Token type = mustbe(tg_type);
+    Token name = mustbe(tk_identifier);
 
-    ast ret = create_empty() ;
-    pop_error_context() ;
-    return ret ;
+    vector<ast> decs;
+    decs.push_back(declare_variable(name, type, "this"));
+    while (have_next(tk_comma))
+    {
+        name = mustbe(tk_identifier);
+        decs.push_back(declare_variable(name, type, "this"));
+    }
+    mustbe(tk_semi);
+
+    ast ret = create_var_decs(decs);
+    pop_error_context();
+    return ret;
 }
 
 // subr_decs ::= (constructor | function | method)*
@@ -253,13 +295,32 @@ static ast parse_field_var_dec()
 //
 static ast parse_subr_decs()
 {
-    push_error_context("parse_subr_decs()") ;
+    push_error_context("parse_subr_decs()");
 
     // add code here ...
+    vector<ast> subrs;
+    while (have(tg_subroutine))
+    {
+        switch (token_kind())
+        {
+        case tk_constructor:
+            subrs.push_back(create_subr(parse_constructor()));
+            break;
+        case tk_function:
+            subrs.push_back(create_subr(parse_function()));
+            break;
+        case tk_method:
+            subrs.push_back(create_subr(parse_method()));
+            break;
+        default:
+            did_not_find(tg_subroutine);
+            break;
+        }
+    }
 
-    ast ret = create_empty() ;
-    pop_error_context() ;
-    return ret ;
+    ast ret = create_subr_decs(subrs);
+    pop_error_context();
+    return ret;
 }
 
 // constructor ::= tk_constructor tk_identifier tk_identifier tk_lrb param_list tk_rrb subr_body
@@ -271,20 +332,27 @@ static ast parse_subr_decs()
 //
 static ast parse_constructor()
 {
-    push_error_context("parse_constructor()") ;
+    push_error_context("parse_constructor()");
 
     // the constructor needs a new symbol table for its parameters and local variables
-    now_parsing = Constructor ;
-    push_symbol_table() ;
+    now_parsing = Constructor;
+    push_symbol_table();
 
     // add code here ...
+    mustbe(tk_constructor);
+    string vtype = token_spelling(mustbe(tk_identifier));
+    string name = token_spelling(mustbe(tk_identifier));
+    mustbe(tk_lrb);
+    ast params = parse_param_list();
+    mustbe(tk_rrb);
+    ast body = parse_subr_body();
 
     // delete the constructor's symbol table
-    pop_symbol_table() ;
+    pop_symbol_table();
 
-    ast ret = create_empty() ;
-    pop_error_context() ;
-    return ret ;
+    ast ret = create_constructor(vtype, name, params, body);
+    pop_error_context();
+    return ret;
 }
 
 // function ::= tk_function tg_vtype tk_identifier tk_lrb param_list tk_rrb subr_body
@@ -296,20 +364,27 @@ static ast parse_constructor()
 //
 static ast parse_function()
 {
-    push_error_context("parse_function()") ;
+    push_error_context("parse_function()");
 
     // the function needs a new symbol table for its parameters and local variables
-    now_parsing = Function ;
-    push_symbol_table() ;
+    now_parsing = Function;
+    push_symbol_table();
 
     // add code here ...
+    mustbe(tk_function);
+    string vtype = token_spelling(mustbe(tg_vtype));
+    string name = token_spelling(mustbe(tk_identifier));
+    mustbe(tk_lrb);
+    ast params = parse_param_list();
+    mustbe(tk_rrb);
+    ast body = parse_subr_body();
 
     // delete the function's symbol table
-    pop_symbol_table() ;
+    pop_symbol_table();
 
-    ast ret = create_empty() ;
-    pop_error_context() ;
-    return ret ;
+    ast ret = create_function(vtype, name, params, body);
+    pop_error_context();
+    return ret;
 }
 
 // method ::= tk_method tg_vtype tk_identifier tk_lrb param_list tk_rrb subr_body
@@ -321,20 +396,27 @@ static ast parse_function()
 //
 static ast parse_method()
 {
-    push_error_context("parse_method()") ;
+    push_error_context("parse_method()");
 
     // the method needs a new symbol table for its parameters and local variables
-    now_parsing = Method ;
-    push_symbol_table() ;
+    now_parsing = Method;
+    push_symbol_table();
 
     // add code here ...
+    mustbe(tk_method);
+    string vtype = token_spelling(mustbe(tg_vtype));
+    string name = token_spelling(mustbe(tk_identifier));
+    mustbe(tk_lrb);
+    ast params = parse_param_list();
+    mustbe(tk_rrb);
+    ast body = parse_subr_body();
 
     // delete the method's symbol table
-    pop_symbol_table() ;
+    pop_symbol_table();
 
-    ast ret = create_empty() ;
-    pop_error_context() ;
-    return ret ;
+    ast ret = create_method(vtype, name, params, body);
+    pop_error_context();
+    return ret;
 }
 
 // param_list ::= ((tg_type tk_identifier) (tk_comma tg_type tk_identifier)*)?
@@ -345,13 +427,26 @@ static ast parse_method()
 //
 static ast parse_param_list()
 {
-    push_error_context("parse_param_list()") ;
+    push_error_context("parse_param_list()");
 
     // add code here ...
+    vector<ast> params;
+    if (have(tg_type))
+    {
+        Token type = mustbe(tg_type);
+        Token name = mustbe(tk_identifier);
+        params.push_back(declare_variable(name, type, "param"));
+        while (have_next(tk_comma))
+        {
+            type = mustbe(tg_type);
+            name = mustbe(tk_identifier);
+            params.push_back(declare_variable(name, type, "param"));
+        }
+    }
 
-    ast ret = create_empty() ;
-    pop_error_context() ;
-    return ret ;
+    ast ret = create_param_list(params);
+    pop_error_context();
+    return ret;
 }
 
 // subr_body ::= tk_lcb var_decs statements tk_rcb
