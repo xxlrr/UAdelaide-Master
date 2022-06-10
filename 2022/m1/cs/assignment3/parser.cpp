@@ -460,8 +460,12 @@ static ast parse_subr_body()
     push_error_context("parse_subr_body()") ;
 
     // add code here ...
+    mustbe(tk_lcb);
+    ast var_decs = parse_var_decs();
+    ast statements = parse_statements();
+    mustbe(tk_rcb);
 
-    ast ret = create_empty() ;
+    ast ret = create_subr_body(var_decs, statements);
     pop_error_context() ;
     return ret ;
 }
@@ -475,8 +479,13 @@ static ast parse_var_decs()
     push_error_context("parse_var_decs()") ;
 
     // add code here ...
+    vector<ast> decs;
+    while (have(tk_var))
+    {
+        decs.push_back(parse_var_dec());
+    }
 
-    ast ret = create_empty() ;
+    ast ret = create_var_decs(decs);
     pop_error_context() ;
     return ret ;
 }
@@ -492,8 +501,19 @@ static ast parse_var_dec()
     push_error_context("parse_var_dec()") ;
 
     // add code here ...
+    mustbe(tk_var);
+    Token type = mustbe(tg_type);
+    Token name = mustbe(tk_identifier);
 
-    ast ret = create_empty() ;
+    vector<ast> decs;
+    decs.push_back(declare_variable(name, type, "local"));
+    while (have_next(tk_comma))
+    {
+        name = mustbe(tk_identifier);
+        decs.push_back(declare_variable(name, type, "local"));
+    }
+
+    ast ret = create_var_decs(decs);
     pop_error_context() ;
     return ret ;
 }
@@ -507,8 +527,13 @@ static ast parse_statements()
     push_error_context("parse_statements()") ;
 
     // add code here ...
+    vector<ast> statements;
+    while(have(tg_statement))
+    {
+        statements.push_back(parse_statement());
+    }
 
-    ast ret = create_empty() ;
+    ast ret = create_statements(statements) ;
     pop_error_context() ;
     return ret ;
 }
@@ -522,8 +547,30 @@ static ast parse_statement()
     push_error_context("parse_statement()") ;
 
     // add code here ...
+    ast statement = nullptr;
+    switch(token_kind())
+    {
+    case tk_let:
+        statement = parse_let();
+        break;
+    case tk_if:
+        statement = parse_if();
+        break;
+    case tk_while:
+        statement = parse_while();
+        break;
+    case tk_do:
+        statement = parse_do();
+        break;
+    case tk_return:
+        statement = parse_return();
+        break;
+    default:
+        did_not_find(tg_statement);
+        break;
+    }
 
-    ast ret = create_empty() ;
+    ast ret = create_statement(statement);
     pop_error_context() ;
     return ret ;
 }
@@ -545,8 +592,15 @@ static ast parse_let()
     push_error_context("parse_let()") ;
 
     // add code here ...
+    mustbe(tk_let);
+    Token name = mustbe(tk_identifier);
+    ast var = lookup_variable_fatal(name);
+    ast index = have(tk_lsb) ? parse_expr() : nullptr;
+    mustbe(tk_assign);
+    ast expr = parse_expr();
+    mustbe(tk_semi);
 
-    ast ret = create_empty() ;
+    ast ret = index ? create_let_array(var, index, expr) : create_let(var, expr);
     pop_error_context() ;
     return ret ;
 }
