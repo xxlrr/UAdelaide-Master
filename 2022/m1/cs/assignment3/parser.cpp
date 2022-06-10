@@ -692,7 +692,7 @@ static ast parse_do()
         call = parse_void_this_call();
         break;
     default:
-        did_not_find(tg_identifier);
+        did_not_find(tg_void_call);
         break;
     }
     mustbe(tk_semi);
@@ -721,16 +721,18 @@ static ast parse_void_var_call()
     push_error_context("parse_void_var_call()") ;
 
     // add code here ...
-    Token name = mustbe(tk_identifier);
+    Token tk_id = mustbe(tk_identifier);
 
+    ast object = nullptr;
     ast ret = nullptr;
     switch (token_kind())
     {
     case tk_fn:
-        ret = create_call_as_function(name.str, parse_fn_call());
+        ret = create_call_as_function(token_spelling(tk_id), parse_fn_call());
         break;
     case tk_stop:
-        ret = create_call_as_method(name.str, parse_method_call());
+        object = lookup_variable_fatal(tk_id);
+        ret = create_call_as_method(get_var_type(object), object, parse_method_call());
         break;
     default:
         did_not_find(tg_stop_fn);
@@ -757,8 +759,11 @@ static ast parse_void_this_call()
     push_error_context("parse_void_this_call()") ;
 
     // add code here ...
+    mustbe(tk_this);
+    ast object = create_this();
+    ast subr_call = parse_method_call();
 
-    ast ret = create_empty() ;
+    ast ret = create_call_as_method(get_var_type(object), object, subr_call);
     pop_error_context() ;
     return ret ;
 }
@@ -776,8 +781,20 @@ static ast parse_return()
     push_error_context("parse_return()") ;
 
     // add code here ...
+    mustbe(tk_return);
 
-    ast ret = create_empty() ;
+    ast ret = nullptr;
+    if (have_next(tk_semi))
+    {
+        ret = create_return();
+    }
+    else
+    {
+        ast expr = parse_expr();
+        ret = create_return_expr(expr);
+        mustbe(tk_semi);
+    }
+
     pop_error_context() ;
     return ret ;
 }
@@ -796,8 +813,21 @@ static ast parse_expr()
     push_error_context("parse_expr()") ;
 
     // add code here ...
+    ast term = parse_term();
 
-    ast ret = create_empty() ;
+    ast ret = nullptr;
+    if (have(tg_infix_op))
+    {
+        Token tk_infix_op = mustbe(tg_infix_op);
+        ast op = create_infix_op(token_spelling(tk_infix_op));
+        ast rhs = parse_expr();
+        ret = create_expr(term, op, rhs);
+    }
+    else
+    {
+        ret = create_expr(term);
+    }
+
     pop_error_context() ;
     return ret ;
 }
@@ -828,8 +858,49 @@ static ast parse_term()
     push_error_context("parse_term()") ;
 
     // add code here ...
+    ast ret = nullptr;
+    switch (token_kind())
+    {
+    case tk_integer:
+        ret = create_int(token_ivalue(mustbe(tk_integer)));
+        break;
+    case tk_string:
+        ret = create_string(token_spelling(mustbe(tk_string)));
+        break;
+    case tk_true:
+        next_token();
+        ret = create_bool(true);
+        break;
+    case tk_false:
+        next_token();
+        ret = create_bool(false);
+        break;
+    case tk_null:
+        next_token();
+        ret = create_null();
+        break;
+    case tk_lrb:
+        next_token();
+        ret = parse_expr();
+        mustbe(tk_rrb);
+        break;
+    case tk_sub:
+    case tk_not:
+        ret = create_unary_op(
+            token_spelling(mustbe(tg_unary_op)),
+            parse_term());
+        break;
+    case tk_identifier:
+        ret = parse_var_term();
+        break;
+    case tk_this:
+        ret = parse_this_term();
+        break;
+    default:
+        did_not_find(tg_term);
+        break;
+    }
 
-    ast ret = create_empty() ;
     pop_error_context() ;
     return ret ;
 }
