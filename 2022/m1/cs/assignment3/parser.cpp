@@ -158,6 +158,7 @@ static ast parse_expr_list() ;
 
 // class ::= tk_class tk_identifier tk_lcb static_var_decs field_var_decs subr_decs tk_rcb
 // create_class(myclassname,statics,fields,class_subrs)
+static string ClassName;
 static ast parse_class()
 {
     push_error_context("parse_class()");
@@ -168,7 +169,7 @@ static ast parse_class()
 
     // add code here ...
     mustbe(tk_class);
-    string myclassname = token_spelling(mustbe(tk_identifier));
+    ClassName = token_spelling(mustbe(tk_identifier));
     mustbe(tk_lcb);
     ast statics = parse_static_var_decs();
     ast fields = parse_field_var_decs();
@@ -179,7 +180,7 @@ static ast parse_class()
     pop_symbol_table();
     pop_symbol_table();
 
-    ast ret = create_class(myclassname, statics, fields, class_subrs);
+    ast ret = create_class(ClassName, statics, fields, class_subrs);
     pop_error_context();
     return ret;
 }
@@ -340,7 +341,14 @@ static ast parse_constructor()
 
     // add code here ...
     mustbe(tk_constructor);
-    string vtype = token_spelling(mustbe(tk_identifier));
+
+    Token tk_id = mustbe(tk_identifier);
+    string vtype = token_spelling(tk_id);
+    if (ClassName != vtype)
+    {
+        fatal_token_context("constructor return type must be its own class");
+    }
+
     string name = token_spelling(mustbe(tk_identifier));
     mustbe(tk_lrb);
     ast params = parse_param_list();
@@ -455,6 +463,7 @@ static ast parse_param_list()
 // . decs: ast_var_decs - the subroutine's local variable declarations
 // . body: ast_statements - the statements within the body of the subroutinue
 //
+static bool HaveReturn = false;
 static ast parse_subr_body()
 {
     push_error_context("parse_subr_body()");
@@ -462,7 +471,14 @@ static ast parse_subr_body()
     // add code here ...
     mustbe(tk_lcb);
     ast var_decs = parse_var_decs();
+
+    HaveReturn = false;
     ast statements = parse_statements();
+    if (!HaveReturn)
+    {
+        fatal_token_context("subroutine must finish with a return statement");
+    }
+
     mustbe(tk_rcb);
 
     ast ret = create_subr_body(var_decs, statements);
@@ -565,6 +581,7 @@ static ast parse_statement()
         break;
     case tk_return:
         statement = parse_return();
+        HaveReturn = true;
         break;
     default:
         did_not_find(tg_statement);
