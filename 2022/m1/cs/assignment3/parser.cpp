@@ -457,7 +457,7 @@ static ast parse_param_list()
 //
 static ast parse_subr_body()
 {
-    push_error_context("parse_subr_body()") ;
+    push_error_context("parse_subr_body()");
 
     // add code here ...
     mustbe(tk_lcb);
@@ -466,8 +466,8 @@ static ast parse_subr_body()
     mustbe(tk_rcb);
 
     ast ret = create_subr_body(var_decs, statements);
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 // var_decs ::= var_dec*
@@ -476,7 +476,7 @@ static ast parse_subr_body()
 //
 static ast parse_var_decs()
 {
-    push_error_context("parse_var_decs()") ;
+    push_error_context("parse_var_decs()");
 
     // add code here ...
     vector<ast> decs;
@@ -486,8 +486,8 @@ static ast parse_var_decs()
     }
 
     ast ret = create_var_decs(decs);
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 // var_dec ::= tk_var tg_type tk_identifier (tk_comma tk_identifier)* tk_semi
@@ -498,7 +498,7 @@ static ast parse_var_decs()
 //
 static ast parse_var_dec()
 {
-    push_error_context("parse_var_dec()") ;
+    push_error_context("parse_var_dec()");
 
     // add code here ...
     mustbe(tk_var);
@@ -512,10 +512,11 @@ static ast parse_var_dec()
         name = mustbe(tk_identifier);
         decs.push_back(declare_variable(name, type, "local"));
     }
+    mustbe(tk_semi);
 
     ast ret = create_var_decs(decs);
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 // statements ::= statement*
@@ -524,18 +525,18 @@ static ast parse_var_dec()
 //
 static ast parse_statements()
 {
-    push_error_context("parse_statements()") ;
+    push_error_context("parse_statements()");
 
     // add code here ...
     vector<ast> statements;
-    while(have(tg_statement))
+    while (have(tg_statement))
     {
         statements.push_back(parse_statement());
     }
 
-    ast ret = create_statements(statements) ;
-    pop_error_context() ;
-    return ret ;
+    ast ret = create_statements(statements);
+    pop_error_context();
+    return ret;
 }
 
 // statement ::= let | if | while | do | return
@@ -544,11 +545,11 @@ static ast parse_statements()
 //
 static ast parse_statement()
 {
-    push_error_context("parse_statement()") ;
+    push_error_context("parse_statement()");
 
     // add code here ...
     ast statement = nullptr;
-    switch(token_kind())
+    switch (token_kind())
     {
     case tk_let:
         statement = parse_let();
@@ -571,8 +572,8 @@ static ast parse_statement()
     }
 
     ast ret = create_statement(statement);
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 // let ::= tk_let tk_identifier index? tk_assign expr tk_semi
@@ -589,7 +590,7 @@ static ast parse_statement()
 //
 static ast parse_let()
 {
-    push_error_context("parse_let()") ;
+    push_error_context("parse_let()");
 
     // add code here ...
     mustbe(tk_let);
@@ -601,8 +602,8 @@ static ast parse_let()
     mustbe(tk_semi);
 
     ast ret = index ? create_let_array(var, index, expr) : create_let(var, expr);
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 // if ::= tk_if tk_lrb expr tk_rrb tk_lcb statements tk_rcb (tk_else tk_lcb statements tk_rcb)?
@@ -619,7 +620,7 @@ static ast parse_let()
 //
 static ast parse_if()
 {
-    push_error_context("parse_if()") ;
+    push_error_context("parse_if()");
 
     // add code here ...
     mustbe(tk_if);
@@ -643,8 +644,8 @@ static ast parse_if()
         ret = create_if(condition, if_true);
     }
 
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 // while ::= tk_while tk_lrb expr tk_rrb tk_lcb statements tk_rcb
@@ -654,7 +655,7 @@ static ast parse_if()
 //
 static ast parse_while()
 {
-    push_error_context("parse_while()") ;
+    push_error_context("parse_while()");
 
     // add code here ...
     mustbe(tk_while);
@@ -666,10 +667,9 @@ static ast parse_while()
     mustbe(tk_rcb);
 
     ast ret = create_while(condition, body);
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
-
 
 // do ::= tk_do (void_var_call | void_this_call) tk_semi
 // returns ast_do: create_do(ast call)
@@ -677,13 +677,13 @@ static ast parse_while()
 //
 static ast parse_do()
 {
-    push_error_context("parse_do()") ;
+    push_error_context("parse_do()");
 
     // add code here ...
     mustbe(tk_do);
 
     ast call = nullptr;
-    switch(token_kind())
+    switch (token_kind())
     {
     case tk_identifier:
         call = parse_void_var_call();
@@ -698,8 +698,8 @@ static ast parse_do()
     mustbe(tk_semi);
 
     ast ret = create_do(call);
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 // void_var_call    ::= tk_identifier (fn_call | method_call)
@@ -718,7 +718,7 @@ static ast parse_do()
 //
 static ast parse_void_var_call()
 {
-    push_error_context("parse_void_var_call()") ;
+    push_error_context("parse_void_var_call()");
 
     // add code here ...
     Token tk_id = mustbe(tk_identifier);
@@ -739,8 +739,8 @@ static ast parse_void_var_call()
         break;
     }
 
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 // void_this_call ::= tk_this method_call
@@ -756,7 +756,7 @@ static ast parse_void_var_call()
 //
 static ast parse_void_this_call()
 {
-    push_error_context("parse_void_this_call()") ;
+    push_error_context("parse_void_this_call()");
 
     // add code here ...
     mustbe(tk_this);
@@ -764,8 +764,8 @@ static ast parse_void_this_call()
     ast subr_call = parse_method_call();
 
     ast ret = create_call_as_method(get_var_type(object), object, subr_call);
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 // return ::= tk_return expr? tk_semi
@@ -778,7 +778,7 @@ static ast parse_void_this_call()
 //
 static ast parse_return()
 {
-    push_error_context("parse_return()") ;
+    push_error_context("parse_return()");
 
     // add code here ...
     mustbe(tk_return);
@@ -795,8 +795,8 @@ static ast parse_return()
         mustbe(tk_semi);
     }
 
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 // expr ::= term (tg_infix_op expr)?
@@ -810,7 +810,7 @@ static ast parse_return()
 //
 static ast parse_expr()
 {
-    push_error_context("parse_expr()") ;
+    push_error_context("parse_expr()");
 
     // add code here ...
     ast term = parse_term();
@@ -820,7 +820,7 @@ static ast parse_expr()
     {
         Token tk_infix_op = mustbe(tg_infix_op);
         ast op = create_infix_op(token_spelling(tk_infix_op));
-        ast rhs = parse_expr();
+        ast rhs = create_term(parse_expr());
         ret = create_expr(term, op, rhs);
     }
     else
@@ -828,8 +828,8 @@ static ast parse_expr()
         ret = create_expr(term);
     }
 
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 // term ::= tk_integer | tk_string | tk_true | tk_false | tk_null | (tk_lrb expr tk_rrb) | (tg_unary_op term) | var_term | this_term
@@ -855,54 +855,55 @@ static ast parse_expr()
 //
 static ast parse_term()
 {
-    push_error_context("parse_term()") ;
+    push_error_context("parse_term()");
 
     // add code here ...
-    ast ret = nullptr;
+    ast term = nullptr;
     switch (token_kind())
     {
     case tk_integer:
-        ret = create_int(token_ivalue(mustbe(tk_integer)));
+        term = create_int(token_ivalue(mustbe(tk_integer)));
         break;
     case tk_string:
-        ret = create_string(token_spelling(mustbe(tk_string)));
+        term = create_string(token_spelling(mustbe(tk_string)));
         break;
     case tk_true:
         next_token();
-        ret = create_bool(true);
+        term = create_bool(true);
         break;
     case tk_false:
         next_token();
-        ret = create_bool(false);
+        term = create_bool(false);
         break;
     case tk_null:
         next_token();
-        ret = create_null();
+        term = create_null();
         break;
     case tk_lrb:
         next_token();
-        ret = parse_expr();
+        term = parse_expr();
         mustbe(tk_rrb);
         break;
     case tk_sub:
     case tk_not:
-        ret = create_unary_op(
+        term = create_unary_op(
             token_spelling(mustbe(tg_unary_op)),
             parse_term());
         break;
     case tk_identifier:
-        ret = parse_var_term();
+        term = parse_var_term();
         break;
     case tk_this:
-        ret = parse_this_term();
+        term = parse_this_term();
         break;
     default:
         did_not_find(tg_term);
         break;
     }
 
-    pop_error_context() ;
-    return ret ;
+    ast ret = create_term(term);
+    pop_error_context();
+    return ret;
 }
 
 // var_term ::= tk_identifier (index | fn_call | method_call)?
@@ -928,14 +929,14 @@ static ast parse_term()
 //
 static ast parse_var_term()
 {
-    push_error_context("parse_var_term()") ;
+    push_error_context("parse_var_term()");
 
     // add code here ...
     Token tk_id = mustbe(tk_identifier);
     ast var = lookup_variable_fatal(tk_id);
 
     ast ret = nullptr;
-    switch(token_kind())
+    switch (token_kind())
     {
     case tk_lsb:
         ret = create_array_index(var, parse_index());
@@ -951,8 +952,8 @@ static ast parse_var_term()
         break;
     }
 
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 // this_term ::= tk_this method_call?
@@ -968,7 +969,7 @@ static ast parse_var_term()
 //
 static ast parse_this_term()
 {
-    push_error_context("parse_this_term()") ;
+    push_error_context("parse_this_term()");
 
     // add code here ...
     mustbe(tk_this);
@@ -982,15 +983,15 @@ static ast parse_this_term()
         ret = create_call_as_method(class_name, ret, subr_call);
     }
 
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 // index ::= tk_lsb expr tk_rsb
 // returns ast_expr
 static ast parse_index()
 {
-    push_error_context("parse_index()") ;
+    push_error_context("parse_index()");
 
     // add code here ...
     mustbe(tk_lsb);
@@ -998,8 +999,8 @@ static ast parse_index()
     mustbe(tk_rsb);
 
     ast ret = expr;
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 // fn_call ::= tk_fn tk_identifier tk_lrb expr_list tk_rrb
@@ -1010,7 +1011,7 @@ static ast parse_index()
 //
 static ast parse_fn_call()
 {
-    push_error_context("parse_fn_call()") ;
+    push_error_context("parse_fn_call()");
 
     // add code here ...
     mustbe(tk_fn);
@@ -1020,8 +1021,8 @@ static ast parse_fn_call()
     mustbe(tk_rrb);
 
     ast ret = create_subr_call(subr_name, expr_list);
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 // method_call ::= tk_stop tk_identifier tk_lrb expr_list tk_rrb
@@ -1032,7 +1033,7 @@ static ast parse_fn_call()
 //
 static ast parse_method_call()
 {
-    push_error_context("parse_method_call()") ;
+    push_error_context("parse_method_call()");
 
     // add code here ...
     mustbe(tk_stop);
@@ -1042,8 +1043,8 @@ static ast parse_method_call()
     mustbe(tk_rrb);
 
     ast ret = create_subr_call(subr_name, expr_list);
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 // expr_list ::= (expr (tk_comma expr)*)?
@@ -1052,7 +1053,7 @@ static ast parse_method_call()
 //
 static ast parse_expr_list()
 {
-    push_error_context("parse_expr_list()") ;
+    push_error_context("parse_expr_list()");
 
     // add code here ...
     vector<ast> exprs;
@@ -1066,8 +1067,8 @@ static ast parse_expr_list()
     }
 
     ast ret = create_expr_list(exprs);
-    pop_error_context() ;
-    return ret ;
+    pop_error_context();
+    return ret;
 }
 
 /////////////////////////////////////////////////////////////////////////////
