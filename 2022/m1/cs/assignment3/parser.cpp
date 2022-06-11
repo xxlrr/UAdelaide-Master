@@ -156,10 +156,6 @@ static ast parse_fn_call() ;
 static ast parse_method_call() ;
 static ast parse_expr_list() ;
 
-// other functions declared
-static bool have_return(ast statements, TokenKind expected) ;
-static void must_return(ast statements, TokenKind expected) ;
-
 // class ::= tk_class tk_identifier tk_lcb static_var_decs field_var_decs subr_decs tk_rcb
 // create_class(myclassname,statics,fields,class_subrs)
 static string ClassName;
@@ -447,12 +443,12 @@ static ast parse_param_list()
     {
         Token type = mustbe(tg_type);
         Token name = mustbe(tk_identifier);
-        params.push_back(declare_variable(name, type, "param"));
+        params.push_back(declare_variable(name, type, "argument"));
         while (have_next(tk_comma))
         {
             type = mustbe(tg_type);
             name = mustbe(tk_identifier);
-            params.push_back(declare_variable(name, type, "param"));
+            params.push_back(declare_variable(name, type, "argument"));
         }
     }
 
@@ -614,12 +610,12 @@ static ast parse_let()
     mustbe(tk_let);
     Token name = mustbe(tk_identifier);
     ast var = lookup_variable_fatal(name);
-    ast index = have(tk_lsb) ? parse_expr() : nullptr;
+    ast index = (have(tk_lsb) ? parse_index() : nullptr);
     mustbe(tk_assign);
     ast expr = parse_expr();
     mustbe(tk_semi);
 
-    ast ret = index ? create_let_array(var, index, expr) : create_let(var, expr);
+    ast ret = (index ? create_let_array(var, index, expr) : create_let(var, expr));
     pop_error_context();
     return ret;
 }
@@ -781,7 +777,7 @@ static ast parse_void_this_call()
     ast object = create_this();
     ast subr_call = parse_method_call();
 
-    ast ret = create_call_as_method(get_var_type(object), object, subr_call);
+    ast ret = create_call_as_method(ClassName, object, subr_call);
     pop_error_context();
     return ret;
 }
@@ -805,6 +801,8 @@ static ast parse_return()
     if (now_parsing == Constructor)
     {
         mustbe(tk_this);
+        ast expr = create_expr(create_term(create_this()));
+        ret = create_return_expr(expr);
     }
     else if (have(tk_semi))
     {
@@ -816,8 +814,7 @@ static ast parse_return()
     {
         if (vtype == token_kind_to_string(tk_void))
             fatal_token_context("returning a value from a void function or method\n"); 
-        ast expr = parse_expr();
-            
+        ast expr = parse_expr();   
         ret = create_return_expr(expr);
     }
     mustbe(tk_semi);
@@ -960,21 +957,24 @@ static ast parse_var_term()
 
     // add code here ...
     Token tk_id = mustbe(tk_identifier);
-    ast var = lookup_variable_fatal(tk_id);
 
+    ast var = nullptr;
     ast ret = nullptr;
     switch (token_kind())
     {
     case tk_lsb:
+        var = lookup_variable_fatal(tk_id);
         ret = create_array_index(var, parse_index());
         break;
     case tk_fn:
         ret = create_call_as_function(token_spelling(tk_id), parse_fn_call());
         break;
     case tk_stop:
+        var = lookup_variable_fatal(tk_id);
         ret = create_call_as_method(get_var_type(var), var, parse_method_call());
         break;
     default:
+        var = lookup_variable_fatal(tk_id);
         ret = var;
         break;
     }
