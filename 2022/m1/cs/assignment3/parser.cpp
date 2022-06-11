@@ -156,6 +156,9 @@ static ast parse_fn_call() ;
 static ast parse_method_call() ;
 static ast parse_expr_list() ;
 
+// other functions declared
+static void must_return(ast statements, TokenKind expected) ;
+
 // class ::= tk_class tk_identifier tk_lcb static_var_decs field_var_decs subr_decs tk_rcb
 // create_class(myclassname,statics,fields,class_subrs)
 static string ClassName;
@@ -346,7 +349,7 @@ static ast parse_constructor()
     string vtype = token_spelling(tk_id);
     if (ClassName != vtype)
     {
-        fatal_token_context("constructor return type must be its own class");
+        fatal_token_context("constructor return type must be its own class\n");
     }
 
     string name = token_spelling(mustbe(tk_identifier));
@@ -354,6 +357,8 @@ static ast parse_constructor()
     ast params = parse_param_list();
     mustbe(tk_rrb);
     ast body = parse_subr_body();
+    ast statements = get_subr_body_body(body);
+    must_return(statements, string_to_token_kind(vtype));
 
     // delete the constructor's symbol table
     pop_symbol_table();
@@ -386,6 +391,8 @@ static ast parse_function()
     ast params = parse_param_list();
     mustbe(tk_rrb);
     ast body = parse_subr_body();
+    ast statements = get_subr_body_body(body);
+    must_return(statements, string_to_token_kind(vtype));
 
     // delete the function's symbol table
     pop_symbol_table();
@@ -418,6 +425,8 @@ static ast parse_method()
     ast params = parse_param_list();
     mustbe(tk_rrb);
     ast body = parse_subr_body();
+    ast statements = get_subr_body_body(body);
+    must_return(statements, string_to_token_kind(vtype));
 
     // delete the method's symbol table
     pop_symbol_table();
@@ -463,7 +472,6 @@ static ast parse_param_list()
 // . decs: ast_var_decs - the subroutine's local variable declarations
 // . body: ast_statements - the statements within the body of the subroutinue
 //
-static bool HaveReturn = false;
 static ast parse_subr_body()
 {
     push_error_context("parse_subr_body()");
@@ -472,13 +480,7 @@ static ast parse_subr_body()
     mustbe(tk_lcb);
     ast var_decs = parse_var_decs();
 
-    HaveReturn = false;
     ast statements = parse_statements();
-    if (!HaveReturn)
-    {
-        fatal_token_context("subroutine must finish with a return statement");
-    }
-
     mustbe(tk_rcb);
 
     ast ret = create_subr_body(var_decs, statements);
@@ -581,7 +583,6 @@ static ast parse_statement()
         break;
     case tk_return:
         statement = parse_return();
-        HaveReturn = true;
         break;
     default:
         did_not_find(tg_statement);
@@ -1086,6 +1087,46 @@ static ast parse_expr_list()
     ast ret = create_expr_list(exprs);
     pop_error_context();
     return ret;
+}
+
+// check that the return type is correct
+// kind is the one of the tg_vtype tokens
+static void must_return(ast statements, TokenKind expected)
+{
+    // Notes:
+    // Attempts to return a value of a different type from the declared return type of a function or method.
+    // This is a potentially significant error that we will ignore except in the case of constructors.
+
+    int size = size_of_statements(statements);
+    if (size == 0) 
+        fatal_token_context("subroutine must finish with a return statement\n") ;  
+    
+    ast last = get_statements(statements, size - 1);
+    ast statement = get_statement_statement(last);
+
+    ast_kind node_kind = ast_node_kind(statement);
+    switch (node_kind)
+    {
+    case ast_return:
+        if (tk_void != expected)
+            fatal_token_context("not returning a value from a non-void function or method\n") ;
+        break;
+    case ast_return_expr:
+        if (tk_void == expected)
+            fatal_token_context("returning a value from a void function or method\n");
+        break;
+    case ast_if:
+        must_return(get_if_if_true(statement), expected);
+        break;
+    case ast_if_else:
+        must_return(get_if_else_if_true(statement), expected);
+        must_return(get_if_else_if_false(statement), expected);
+        break;
+    default:
+        fatal_token_context("subroutine must finish with a return statement\n") ;
+        break;
+    }
+
 }
 
 /////////////////////////////////////////////////////////////////////////////
