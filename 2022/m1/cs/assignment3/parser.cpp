@@ -813,8 +813,8 @@ static ast parse_return()
     else
     {
         if (vtype == token_kind_to_string(tk_void))
-            fatal_token_context("returning a value from a void function or method\n"); 
-        ast expr = parse_expr();   
+            fatal_token_context("returning a value from a void function or method\n");
+        ast expr = parse_expr();
         ret = create_return_expr(expr);
     }
     mustbe(tk_semi);

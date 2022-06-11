@@ -69,9 +69,9 @@ static void visit_subr_call(ast t);
 static void visit_expr_list(ast t);
 static void visit_infix_op(ast t);
 
-struct 
+struct
 {
-    string class_name = nullptr;
+    string class_name;
     int this_count = 0;
     int while_count = 0;
     int if_count = 0;
@@ -120,7 +120,7 @@ static void visit_var_dec(ast t)
     // int offset = get_var_dec_offset(t) ;
 
     string segment = get_var_dec_segment(t);
-    if (segment == to_string(tk_this))
+    if (segment == "this")
     {
         global.this_count++;
     }
@@ -177,9 +177,12 @@ static void visit_constructor(ast t)
     string name = get_constructor_name(t);
     ast param_list = get_constructor_param_list(t);
     ast subr_body = get_constructor_subr_body(t);
-    ast var_decs = get_subr_body_var_decs(subr_body);
+    ast var_decs = get_subr_body_decs(subr_body);
 
-    write_to_output("function " + global.class_name + "." + name + " " + to_string(size_of_var_decs(var_decs)) + "\n");
+    write_to_output("function " + global.class_name
+        + "." + name
+        + " " + to_string(size_of_var_decs(var_decs))
+        + "\n");
     write_to_output("push constant " + to_string(global.this_count) + "\n");
     write_to_output("call Memory.alloc 1\n");
     write_to_output("pop pointer 0\n");
@@ -196,13 +199,16 @@ static void visit_constructor(ast t)
 //
 static void visit_function(ast t)
 {
-    // string vtype = get_function_vtype(t) ;
+    string vtype = get_function_vtype(t) ;
     string name = get_function_name(t) ;
     ast param_list = get_function_param_list(t);
     ast subr_body = get_function_subr_body(t);
-    ast var_decs = get_subr_body_var_decs(subr_body);
+    ast var_decs = get_subr_body_decs(subr_body);
 
-    write_to_output("function " + global.class_name + "." + name + " " + to_string(size_of_var_decs(var_decs)) + "\n");
+    write_to_output("function " + global.class_name
+        + "." + name
+        + " " + to_string(size_of_var_decs(var_decs))
+        + "\n");
     visit_param_list(param_list);
     visit_subr_body(subr_body);
 }
@@ -219,9 +225,12 @@ static void visit_method(ast t)
     string name = get_method_name(t) ;
     ast param_list = get_method_param_list(t);
     ast subr_body = get_method_subr_body(t);
-    ast var_decs = get_subr_body_var_decs(subr_body);
+    ast var_decs = get_subr_body_decs(subr_body);
 
-    write_to_output("function " + global.class_name + "." + name + " " + to_string(size_of_var_decs(var_decs)) + "\n");
+    write_to_output("function " + global.class_name
+        + "." + name
+        + " " + to_string(size_of_var_decs(var_decs))
+        + "\n");
     write_to_output("push argument 0\n");
     write_to_output("pop pointer 0\n");
 
@@ -330,6 +339,7 @@ static void visit_let(ast t)
     ast expr = get_let_expr(t);
 
     visit_expr(expr);
+    //TODO
     visit_var(var);
 }
 
@@ -364,16 +374,16 @@ static void visit_if(ast t)
     ast condition = get_if_condition(t);
     ast if_true = get_if_if_true(t);
 
-    string seq = to_string(++global.if_count);
+    string seq = to_string(global.if_count++);
 
     visit_expr(condition);
     write_to_output("if-goto IF_TRUE" + seq + "\n");
-    write_to_output("goto IF_END" + seq + "\n");
+    write_to_output("goto IF_FALSE" + seq + "\n");
     
     write_to_output("label IF_TRUE" + seq + "\n");
     visit_statements(if_true);
 
-    write_to_output("label IF_END" + seq + "\n");
+    write_to_output("label IF_FALSE" + seq + "\n");
 }
 
 // walk an ast if else node with fields
@@ -387,7 +397,7 @@ static void visit_if_else(ast t)
     ast if_true = get_if_else_if_true(t);
     ast if_false = get_if_else_if_false(t);
 
-    string seq = to_string(++global.if_count);
+    string seq = to_string(global.if_count++);
 
     visit_expr(condition);
     write_to_output("if-goto IF_TRUE" + seq + "\n");
@@ -412,16 +422,16 @@ static void visit_while(ast t)
     ast condition = get_while_condition(t);
     ast body = get_while_body(t);
 
-    string seq = to_string(++global.while_count);
+    string seq = to_string(global.while_count++);
 
-    write_to_output("label WHILE_BEGIN" + seq + "\n");
+    write_to_output("label WHILE_EXP" + seq + "\n");
     visit_expr(condition);
     write_to_output("not\n");
     write_to_output("if-goto WHILE_END" + seq + "\n");
 
     visit_statements(body);
 
-    write_to_output("goto WHILE_BEGIN" + seq + "\n");
+    write_to_output("goto WHILE_EXP" + seq + "\n");
     write_to_output("label WHILE_END" + seq + "\n");
 }
 
@@ -475,6 +485,7 @@ static void visit_return_expr(ast t)
 //
 static void visit_expr(ast t)
 {
+    //TODO
     int term_ops = size_of_expr(t);
     for (int i = 0; i < term_ops; i++)
     {
@@ -545,7 +556,7 @@ static void visit_term(ast t)
 //
 static void visit_int(ast t)
 {
-    int _constant = get_int_constant(t) ;
+    int _constant = get_int_constant(t);
     write_to_output("push constant " + to_string(_constant) + "\n");
 }
 
@@ -554,9 +565,10 @@ static void visit_int(ast t)
 //
 static void visit_string(ast t)
 {
-    string _constant = get_string_constant(t) ;
+    string _constant = get_string_constant(t);
     write_to_output("push constant " + to_string(_constant.length()) + "\n");
     write_to_output("call String.new 1\n");
+    //TODO
     for (int i = 0; i < _constant.length(); i++)
     {
         write_to_output("push constant " + to_string(_constant[i]) + "\n");
@@ -569,7 +581,7 @@ static void visit_string(ast t)
 //
 static void visit_bool(ast t)
 {
-    bool _constant = get_bool_t_or_f(t) ;
+    bool _constant = get_bool_t_or_f(t);
 
     write_to_output("push constant 0\n");
     if (_constant)
@@ -602,6 +614,11 @@ static void visit_unary_op(ast t)
     ast term = get_unary_op_term(t);
 
     visit_term(term);
+
+    if (uop == "-")
+        write_to_output("neg\n");
+    else if (uop == "~")
+        write_to_output("not\n");
 }
 
 // walk an ast variable node with fields
@@ -612,10 +629,13 @@ static void visit_unary_op(ast t)
 //
 static void visit_var(ast t)
 {
-    // string name = get_var_name(t) ;
-    // string type = get_var_type(t) ;
-    // string segment = get_var_segment(t) ;
-    // int offset = get_var_offset(t) ;
+    string name = get_var_name(t);
+    string type = get_var_type(t);
+    string segment = get_var_segment(t);
+    int offset = get_var_offset(t);
+
+    // TODO
+    write_to_output("push " + segment + " " + to_string(offset) + "\n");
 }
 
 // walk an ast array index node with fields
@@ -627,8 +647,12 @@ static void visit_array_index(ast t)
     ast var = get_array_index_var(t);
     ast index = get_array_index_index(t);
 
-    visit_var(var);
     visit_expr(index);
+    visit_var(var);
+
+    write_to_output("add\n");
+    write_to_output("pop pointer 1\n");
+    write_to_output("push that 0\n");
 }
 
 // walk an ast subr call as method with fields
@@ -639,8 +663,13 @@ static void visit_call_as_function(ast t)
 {
     string class_name = get_call_as_function_class_name(t);
     ast subr_call = get_call_as_function_subr_call(t);
+    ast expr_list = get_subr_call_expr_list(subr_call);
 
     visit_subr_call(subr_call);
+    write_to_output("call " + class_name 
+        + "." + get_subr_call_subr_name(subr_call)
+        + " " + to_string(size_of_expr_list(expr_list))
+        + "\n");
 }
 
 // walk an ast subr call as method with fields
@@ -653,6 +682,7 @@ static void visit_call_as_method(ast t)
     string class_name = get_call_as_method_class_name(t);
     ast var = get_call_as_method_var(t);
     ast subr_call = get_call_as_method_subr_call(t);
+    ast expr_list = get_subr_call_expr_list(subr_call);
 
     switch (ast_node_kind(var))
     {
@@ -667,6 +697,11 @@ static void visit_call_as_method(ast t)
         break;
     }
     visit_subr_call(subr_call);
+
+    write_to_output("call " + class_name 
+        + "." + get_subr_call_subr_name(subr_call)
+        + " " + to_string(size_of_expr_list(expr_list) + 1)
+        + "\n");
 }
 
 // walk an ast subr call node with fields
@@ -698,7 +733,41 @@ static void visit_expr_list(ast t)
 //
 static void visit_infix_op(ast t)
 {
-    // string op = get_infix_op_op(t) ;
+    string op = get_infix_op_op(t) ;
+
+    switch (op[0])
+    {
+    case '+':
+        write_to_output("add\n");
+        break;
+    case '-':
+        write_to_output("sub\n");
+        break;
+    case '*':
+        write_to_output("call Math.multiply 2\n");
+        break;
+    case '/':
+        write_to_output("call Math.divide 2\n");
+        break;
+    case '&':
+        write_to_output("and\n");
+        break;
+    case '|':
+        write_to_output("or\n");
+        break;
+    case '<':
+        write_to_output("lt\n");
+        break;
+    case '>':
+        write_to_output("gt\n");
+        break;
+    case '=':
+        write_to_output("eq\n");
+        break;
+    default:
+        fatal_error(0, "Unexpected infix op");
+        break;
+    }
 }
 
 // main program
