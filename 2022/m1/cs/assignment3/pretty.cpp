@@ -218,14 +218,8 @@ static void print_constructor(ast t)
     write_to_output_with_indent("constructor " + ClassName + " " + name + "(") ;
     print_param_list(param_list) ;
     write_to_output(")\n") ;
-    
-    write_to_output_with_indent("{\n") ;
-    IndentLevel++ ;
 
     print_subr_body(subr_body) ;
-
-    IndentLevel-- ;
-    write_to_output_with_indent("}\n") ;
 }
 
 // walk an ast function node with fields
@@ -245,13 +239,7 @@ static void print_function(ast t)
     print_param_list(param_list) ;
     write_to_output(")\n") ;
 
-    write_to_output_with_indent("{\n") ;
-    IndentLevel++ ;
-
     print_subr_body(subr_body) ;
-
-    IndentLevel-- ;
-    write_to_output_with_indent("}\n") ;
 }
 
 // walk an ast method node with fields
@@ -271,13 +259,7 @@ static void print_method(ast t)
     print_param_list(param_list) ;
     write_to_output(")\n") ;
 
-    write_to_output_with_indent("{\n") ;
-    IndentLevel++ ;
-
     print_subr_body(subr_body) ;
-
-    IndentLevel-- ;
-    write_to_output_with_indent("}\n") ;
 }
 
 // walk an ast param list node
@@ -303,8 +285,14 @@ static void print_subr_body(ast t)
     ast decs = get_subr_body_decs(t) ;
     ast body = get_subr_body_body(t) ;
 
+    write_to_output_with_indent("{\n") ;
+    IndentLevel++ ;
+
     print_var_decs(decs) ;
     print_statements(body) ;
+
+    IndentLevel-- ;
+    write_to_output_with_indent("}\n") ;
 }
 
 // walk an ast param list node
@@ -323,13 +311,16 @@ static void print_var_decs(ast t)
 // walk an ast statements node
 // it is an ast vector of statement nodes
 //
+static bool need_empty_line;
 static void print_statements(ast t)
 {
     int nstatements = size_of_statements(t) ;
+    need_empty_line = false;
     for ( int i = 0 ; i < nstatements ; i++ )
     {
         print_statement(get_statements(t,i)) ;
     }
+    need_empty_line = false;
 }
 
 // walk an ast statement node with a single field
@@ -338,6 +329,12 @@ static void print_statements(ast t)
 static void print_statement(ast t)
 {
     ast statement = get_statement_statement(t) ;
+
+    if (need_empty_line)
+    {
+        write_to_output("\n") ;
+        need_empty_line = false;
+    }
 
     switch(ast_node_kind(statement))
     {
@@ -349,12 +346,15 @@ static void print_statement(ast t)
         break ;
     case ast_if:
         print_if(statement) ;
+        need_empty_line = true;
         break ;
     case ast_if_else:
         print_if_else(statement) ;
+        need_empty_line = true;
         break ;
     case ast_while:
         print_while(statement) ;
+        need_empty_line = true;
         break ;
     case ast_do:
         print_do(statement) ;
