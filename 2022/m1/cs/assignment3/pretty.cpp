@@ -620,6 +620,7 @@ static void print_string(ast t)
 {
     write_to_output("\"") ;
     string _constant = get_string_constant(t) ;
+    write_to_output(_constant) ;
     write_to_output("\"") ;
 }
 
