@@ -9,10 +9,10 @@
 #include "abstract-syntax-tree.h"
 
 // to shorten our code:
-using namespace std ;
-using namespace CS_IO_Buffers ;
-using namespace CS_Symbol_Tables ;
-using namespace Jack_Compiler ;
+using namespace std;
+using namespace CS_IO_Buffers;
+using namespace CS_Symbol_Tables;
+using namespace Jack_Compiler;
 
 #pragma clang diagnostic ignored "-Wunused-function"
 
@@ -33,42 +33,51 @@ using namespace Jack_Compiler ;
 //  - you can change it as much as you like
 
 // forward declarations of one function per node in the abstract syntax tree
-static ast prune_class(ast t) ;
-static ast prune_class_var_decs(ast t) ;
-static ast prune_var_dec(ast t) ;
-static ast prune_subr_decs(ast t) ;
-static ast prune_subr(ast t) ;
-static ast prune_constructor(ast t) ;
-static ast prune_function(ast t) ;
-static ast prune_method(ast t) ;
-static ast prune_param_list(ast t) ;
-static ast prune_subr_body(ast t) ;
-static ast prune_var_decs(ast t) ;
-static ast prune_statements(ast t) ;
-static ast prune_statement(ast t) ;
-static ast prune_let(ast t) ;
-static ast prune_let_array(ast t) ;
-static ast prune_if(ast t) ;
-static ast prune_if_else(ast t) ;
-static ast prune_while(ast t) ;
-static ast prune_do(ast t) ;
-static ast prune_return(ast t) ;
-static ast prune_return_expr(ast t) ;
-static ast prune_expr(ast t) ;
-static ast prune_term(ast t) ;
-static ast prune_int(ast t) ;
-static ast prune_string(ast t) ;
-static ast prune_bool(ast t) ;
-static ast prune_null(ast t) ;
-static ast prune_this(ast t) ;
-static ast prune_unary_op(ast t) ;
-static ast prune_var(ast t) ;
-static ast prune_array_index(ast t) ;
-static ast prune_call_as_function(ast t) ;
-static ast prune_call_as_method(ast t) ;
-static ast prune_subr_call(ast t) ;
-static ast prune_expr_list(ast t) ;
-static ast prune_infix_op(ast t) ;
+static ast prune_class(ast t);
+static ast prune_class_var_decs(ast t);
+static ast prune_var_dec(ast t);
+static ast prune_subr_decs(ast t);
+static ast prune_subr(ast t);
+static ast prune_constructor(ast t);
+static ast prune_function(ast t);
+static ast prune_method(ast t);
+static ast prune_param_list(ast t);
+static ast prune_subr_body(ast t);
+static ast prune_var_decs(ast t);
+static ast prune_statements(ast t);
+static ast prune_statement(ast t);
+static ast prune_let(ast t);
+static ast prune_let_array(ast t);
+static ast prune_if(ast t);
+static ast prune_if_else(ast t);
+static ast prune_while(ast t);
+static ast prune_do(ast t);
+static ast prune_return(ast t);
+static ast prune_return_expr(ast t);
+static ast prune_expr(ast t);
+static ast prune_term(ast t);
+static ast prune_int(ast t);
+static ast prune_string(ast t);
+static ast prune_bool(ast t);
+static ast prune_null(ast t);
+static ast prune_this(ast t);
+static ast prune_unary_op(ast t);
+static ast prune_var(ast t);
+static ast prune_array_index(ast t);
+static ast prune_call_as_function(ast t);
+static ast prune_call_as_method(ast t);
+static ast prune_subr_call(ast t);
+static ast prune_expr_list(ast t);
+static ast prune_infix_op(ast t);
+
+static vector<string> used_static_vars;
+static vector<string> used_local_vars;
+
+static ast evaluete_expr(ast lhs, ast rhs, ast op)
+{
+
+    return nullptr;
+}
 
 // copy an ast class node with fields:
 // class_name - a string
@@ -77,16 +86,16 @@ static ast prune_infix_op(ast t) ;
 //
 static ast prune_class(ast t)
 {
-    string myclassname = get_class_class_name(t) ;
-    ast statics = get_class_statics(t) ;
-    ast fields = get_class_fields(t) ;
-    ast subr_decs = get_class_subr_decs(t) ;
+    string myclassname = get_class_class_name(t);
+    ast statics = get_class_statics(t);
+    ast fields = get_class_fields(t);
+    ast subr_decs = get_class_subr_decs(t);
 
-    statics = prune_class_var_decs(statics) ;
-    fields = prune_class_var_decs(fields) ;
-    subr_decs = prune_subr_decs(subr_decs) ;
+    subr_decs = prune_subr_decs(subr_decs);
+    statics = prune_class_var_decs(statics);
+    fields = prune_class_var_decs(fields);
 
-    return create_class(get_ann(t),myclassname,statics,fields,subr_decs) ;
+    return create_class(get_ann(t), myclassname, statics, fields, subr_decs);
 }
 
 // copy an ast class var decs node
@@ -94,16 +103,17 @@ static ast prune_class(ast t)
 //
 static ast prune_class_var_decs(ast t)
 {
-    vector<ast> decs ;
+    vector<ast> decs;
 
-    int ndecs = size_of_class_var_decs(t) ;
-    for ( int i = 0 ; i < ndecs ; i++ )
+    int ndecs = size_of_class_var_decs(t);
+    for (int i = 0; i < ndecs; i++)
     {
-        ast deci = get_class_var_decs(t,i) ;
-        decs.push_back(prune_var_dec(deci)) ;
+        // todo: delete useless static vars
+        ast deci = get_class_var_decs(t, i);
+        decs.push_back(prune_var_dec(deci));
     }
 
-    return create_class_var_decs(get_ann(t),decs) ;
+    return create_class_var_decs(get_ann(t), decs);
 }
 
 // copy an ast variable declaration with fields
@@ -115,12 +125,12 @@ static ast prune_class_var_decs(ast t)
 //
 static ast prune_var_dec(ast t)
 {
-    //string name = get_var_dec_name(t) ;
-    //string type = get_var_dec_type(t) ;
-    //string segment = get_var_dec_segment(t) ;
-    //int offset = get_var_dec_offset(t) ;
+    // string name = get_var_dec_name(t) ;
+    // string type = get_var_dec_type(t) ;
+    // string segment = get_var_dec_segment(t) ;
+    // int offset = get_var_dec_offset(t) ;
 
-    return t ;
+    return t;
 }
 
 // copy an ast class var decs node
@@ -128,16 +138,16 @@ static ast prune_var_dec(ast t)
 //
 static ast prune_subr_decs(ast t)
 {
-    vector<ast> decs ;
+    vector<ast> decs;
 
-    int size = size_of_subr_decs(t) ;
-    for ( int i = 0 ; i < size ; i++ )
+    int size = size_of_subr_decs(t);
+    for (int i = 0; i < size; i++)
     {
-        ast deci = get_subr_decs(t,i) ;
-        decs.push_back(prune_subr(deci)) ;
+        ast deci = get_subr_decs(t, i);
+        decs.push_back(prune_subr(deci));
     }
 
-    return create_subr_decs(get_ann(t),decs) ;
+    return create_subr_decs(get_ann(t), decs);
 }
 
 // copy an ast subroutine node with a single field
@@ -145,25 +155,25 @@ static ast prune_subr_decs(ast t)
 //
 static ast prune_subr(ast t)
 {
-    ast subr = get_subr_subr(t) ;
+    ast subr = get_subr_subr(t);
 
-    switch(ast_node_kind(subr))
+    switch (ast_node_kind(subr))
     {
     case ast_constructor:
-        subr = prune_constructor(subr) ;
-        break ;
+        subr = prune_constructor(subr);
+        break;
     case ast_function:
-        subr = prune_function(subr) ;
-        break ;
+        subr = prune_function(subr);
+        break;
     case ast_method:
-        subr = prune_method(subr) ;
-        break ;
+        subr = prune_method(subr);
+        break;
     default:
-        fatal_error(0,"bad subroutine dec found") ;
-        break ;
+        fatal_error(0, "bad subroutine dec found");
+        break;
     }
 
-    return create_subr(get_ann(t),subr) ;
+    return create_subr(get_ann(t), subr);
 }
 
 // copy an ast constructor node with fields
@@ -174,15 +184,15 @@ static ast prune_subr(ast t)
 //
 static ast prune_constructor(ast t)
 {
-    string vtype = get_constructor_vtype(t) ;
-    string name = get_constructor_name(t) ;
-    ast param_list = get_constructor_param_list(t) ;
-    ast subr_body = get_constructor_subr_body(t) ;
+    string vtype = get_constructor_vtype(t);
+    string name = get_constructor_name(t);
+    ast param_list = get_constructor_param_list(t);
+    ast subr_body = get_constructor_subr_body(t);
 
-    param_list = prune_param_list(param_list) ;
-    subr_body = prune_subr_body(subr_body) ;
+    param_list = prune_param_list(param_list);
+    subr_body = prune_subr_body(subr_body);
 
-    return create_constructor(get_ann(t),vtype,name,param_list,subr_body) ;
+    return create_constructor(get_ann(t), vtype, name, param_list, subr_body);
 }
 
 // copy an ast function node with fields
@@ -193,15 +203,15 @@ static ast prune_constructor(ast t)
 //
 static ast prune_function(ast t)
 {
-    string vtype = get_function_vtype(t) ;
-    string name = get_function_name(t) ;
-    ast param_list = get_function_param_list(t) ;
-    ast subr_body = get_function_subr_body(t) ;
+    string vtype = get_function_vtype(t);
+    string name = get_function_name(t);
+    ast param_list = get_function_param_list(t);
+    ast subr_body = get_function_subr_body(t);
 
-    param_list = prune_param_list(param_list) ;
-    subr_body = prune_subr_body(subr_body) ;
+    param_list = prune_param_list(param_list);
+    subr_body = prune_subr_body(subr_body);
 
-    return create_function(get_ann(t),vtype,name,param_list,subr_body) ;
+    return create_function(get_ann(t), vtype, name, param_list, subr_body);
 }
 
 // copy an ast method node with fields
@@ -212,15 +222,15 @@ static ast prune_function(ast t)
 //
 static ast prune_method(ast t)
 {
-    string vtype = get_method_vtype(t) ;
-    string name = get_method_name(t) ;
-    ast param_list = get_method_param_list(t) ;
-    ast subr_body = get_method_subr_body(t) ;
+    string vtype = get_method_vtype(t);
+    string name = get_method_name(t);
+    ast param_list = get_method_param_list(t);
+    ast subr_body = get_method_subr_body(t);
 
-    param_list = prune_param_list(param_list) ;
-    subr_body = prune_subr_body(subr_body) ;
+    param_list = prune_param_list(param_list);
+    subr_body = prune_subr_body(subr_body);
 
-    return create_method(get_ann(t),vtype,name,param_list,subr_body) ;
+    return create_method(get_ann(t), vtype, name, param_list, subr_body);
 }
 
 // copy an ast param list node
@@ -228,16 +238,16 @@ static ast prune_method(ast t)
 //
 static ast prune_param_list(ast t)
 {
-    vector<ast> decs ;
+    vector<ast> decs;
 
-    int size = size_of_param_list(t) ;
-    for ( int i = 0 ; i < size ; i++ )
+    int size = size_of_param_list(t);
+    for (int i = 0; i < size; i++)
     {
-        ast deci = get_param_list(t,i) ;
-        decs.push_back(prune_var_dec(deci)) ;
+        ast deci = get_param_list(t, i);
+        decs.push_back(prune_var_dec(deci));
     }
 
-    return create_param_list(get_ann(t),decs) ;
+    return create_param_list(get_ann(t), decs);
 }
 
 // copy an ast subr body node with fields
@@ -246,13 +256,13 @@ static ast prune_param_list(ast t)
 //
 static ast prune_subr_body(ast t)
 {
-    ast decs = get_subr_body_decs(t) ;
-    ast body = get_subr_body_body(t) ;
+    ast decs = get_subr_body_decs(t);
+    ast body = get_subr_body_body(t);
 
-    decs = prune_var_decs(decs) ;
-    body = prune_statements(body) ;
+    body = prune_statements(body);
+    decs = prune_var_decs(decs);
 
-    return create_subr_body(get_ann(t),decs,body) ;
+    return create_subr_body(get_ann(t), decs, body);
 }
 
 // copy an ast param list node
@@ -260,16 +270,17 @@ static ast prune_subr_body(ast t)
 //
 static ast prune_var_decs(ast t)
 {
-    vector<ast> decs ;
+    vector<ast> decs;
 
-    int size = size_of_var_decs(t) ;
-    for ( int i = 0 ; i < size ; i++ )
+    int size = size_of_var_decs(t);
+    for (int i = 0; i < size; i++)
     {
-        ast deci = get_var_decs(t,i) ;
-        decs.push_back(prune_var_dec(deci)) ;
+        // todo: delete useless local vars
+        ast deci = get_var_decs(t, i);
+        decs.push_back(prune_var_dec(deci));
     }
 
-    return create_var_decs(get_ann(t),decs) ;
+    return create_var_decs(get_ann(t), decs);
 }
 
 // copy an ast statements node
@@ -277,16 +288,16 @@ static ast prune_var_decs(ast t)
 //
 static ast prune_statements(ast t)
 {
-    vector<ast> decs ;
+    vector<ast> decs;
 
-    int size = size_of_statements(t) ;
-    for ( int i = 0 ; i < size ; i++ )
+    int size = size_of_statements(t);
+    for (int i = 0; i < size; i++)
     {
-        ast deci = get_statements(t,i) ;
-        decs.push_back(prune_statement(deci)) ;
+        ast deci = get_statements(t, i);
+        decs.push_back(prune_statement(deci));
     }
 
-    return create_statements(get_ann(t),decs) ;
+    return create_statements(get_ann(t), decs);
 }
 
 // copy an ast statement node with a single field
@@ -294,43 +305,43 @@ static ast prune_statements(ast t)
 //
 static ast prune_statement(ast t)
 {
-    ast statement = get_statement_statement(t) ;
+    ast statement = get_statement_statement(t);
 
-    switch(ast_node_kind(statement))
+    switch (ast_node_kind(statement))
     {
     case ast_let:
-        statement = prune_let(statement) ;
-        break ;
+        statement = prune_let(statement);
+        break;
     case ast_let_array:
-        statement = prune_let_array(statement) ;
-        break ;
+        statement = prune_let_array(statement);
+        break;
     case ast_if:
-        statement = prune_if(statement) ;
-        break ;
+        statement = prune_if(statement);
+        break;
     case ast_if_else:
-        statement = prune_if_else(statement) ;
-        break ;
+        statement = prune_if_else(statement);
+        break;
     case ast_while:
-        statement = prune_while(statement) ;
-        break ;
+        statement = prune_while(statement);
+        break;
     case ast_do:
-        statement = prune_do(statement) ;
-        break ;
+        statement = prune_do(statement);
+        break;
     case ast_return:
-        statement = prune_return(statement) ;
-        break ;
+        statement = prune_return(statement);
+        break;
     case ast_return_expr:
-        statement = prune_return_expr(statement) ;
-        break ;
+        statement = prune_return_expr(statement);
+        break;
     case ast_statements:
-        statement = prune_statements(statement) ;
-        break ;
+        statement = prune_statements(statement);
+        break;
     default:
-        fatal_error(0,"Unexpected statement kind") ;
-        break ;
+        fatal_error(0, "Unexpected statement kind");
+        break;
     }
 
-    return create_statement(get_ann(t),statement) ;
+    return create_statement(get_ann(t), statement);
 }
 
 // copy an ast let node with fields
@@ -339,13 +350,13 @@ static ast prune_statement(ast t)
 //
 static ast prune_let(ast t)
 {
-    ast var = get_let_var(t) ;
-    ast expr = get_let_expr(t) ;
+    ast var = get_let_var(t);
+    ast expr = get_let_expr(t);
 
-    var = prune_var(var) ;
-    expr = prune_expr(expr) ;
+    var = prune_var(var);
+    expr = prune_expr(expr);
 
-    return create_let(get_ann(t),var,expr) ;
+    return create_let(get_ann(t), var, expr);
 }
 
 // copy an ast let array node with fields
@@ -355,15 +366,15 @@ static ast prune_let(ast t)
 //
 static ast prune_let_array(ast t)
 {
-    ast var = get_let_array_var(t) ;
-    ast index = get_let_array_index(t) ;
-    ast expr = get_let_array_expr(t) ;
+    ast var = get_let_array_var(t);
+    ast index = get_let_array_index(t);
+    ast expr = get_let_array_expr(t);
 
-    var = prune_var(var) ;
-    index = prune_expr(index) ;
-    expr = prune_expr(expr) ;
+    var = prune_var(var);
+    index = prune_expr(index);
+    expr = prune_expr(expr);
 
-    return create_let_array(get_ann(t),var,index,expr) ;
+    return create_let_array(get_ann(t), var, index, expr);
 }
 
 // copy an ast if node with fields
@@ -372,13 +383,13 @@ static ast prune_let_array(ast t)
 //
 static ast prune_if(ast t)
 {
-    ast condition = get_if_condition(t) ;
-    ast if_true = get_if_if_true(t) ;
+    ast condition = get_if_condition(t);
+    ast if_true = get_if_if_true(t);
 
-    condition = prune_expr(condition) ;
-    if_true = prune_statements(if_true) ;
+    condition = prune_expr(condition);
+    if_true = prune_statements(if_true);
 
-    return create_if(get_ann(t),condition,if_true) ;
+    return create_if(get_ann(t), condition, if_true);
 }
 
 // copy an ast if else node with fields
@@ -388,15 +399,15 @@ static ast prune_if(ast t)
 //
 static ast prune_if_else(ast t)
 {
-    ast condition = get_if_else_condition(t) ;
-    ast if_true = get_if_else_if_true(t) ;
-    ast if_false = get_if_else_if_false(t) ;
+    ast condition = get_if_else_condition(t);
+    ast if_true = get_if_else_if_true(t);
+    ast if_false = get_if_else_if_false(t);
 
-    condition = prune_expr(condition) ;
-    if_true = prune_statements(if_true) ;
-    if_false = prune_statements(if_false) ;
+    condition = prune_expr(condition);
+    if_true = prune_statements(if_true);
+    if_false = prune_statements(if_false);
 
-    return create_if_else(get_ann(t),condition,if_true,if_false) ;
+    return create_if_else(get_ann(t), condition, if_true, if_false);
 }
 
 // copy an ast while node with fields
@@ -405,13 +416,13 @@ static ast prune_if_else(ast t)
 //
 static ast prune_while(ast t)
 {
-    ast condition = get_while_condition(t) ;
-    ast body = get_while_body(t) ;
+    ast condition = get_while_condition(t);
+    ast body = get_while_body(t);
 
-    condition = prune_expr(condition) ;
-    body = prune_statements(body) ;
+    condition = prune_expr(condition);
+    body = prune_statements(body);
 
-    return create_while(get_ann(t),condition,body) ;
+    return create_while(get_ann(t), condition, body);
 }
 
 // copy an ast do node with a single field
@@ -419,22 +430,22 @@ static ast prune_while(ast t)
 //
 static ast prune_do(ast t)
 {
-    ast call = get_do_call(t) ;
+    ast call = get_do_call(t);
 
-    switch(ast_node_kind(call))
+    switch (ast_node_kind(call))
     {
     case ast_call_as_function:
-        call = prune_call_as_function(call) ;
-        break ;
+        call = prune_call_as_function(call);
+        break;
     case ast_call_as_method:
-        call = prune_call_as_method(call) ;
-        break ;
+        call = prune_call_as_method(call);
+        break;
     default:
-        fatal_error(0,"Unexpected call kind\n") ;
-        break ;
+        fatal_error(0, "Unexpected call kind\n");
+        break;
     }
 
-    return create_do(get_ann(t),call) ;
+    return create_do(get_ann(t), call);
 }
 
 // copy an ast return node, it has not fields
@@ -442,7 +453,7 @@ static ast prune_do(ast t)
 //
 static ast prune_return(ast t)
 {
-    return t ;
+    return t;
 }
 
 // copy an ast return expr node with a single field
@@ -450,11 +461,11 @@ static ast prune_return(ast t)
 //
 static ast prune_return_expr(ast t)
 {
-    ast expr = get_return_expr(t) ;
+    ast expr = get_return_expr(t);
 
-    expr = prune_expr(expr) ;
+    expr = prune_expr(expr);
 
-    return create_return_expr(get_ann(t),expr) ;
+    return create_return_expr(get_ann(t), expr);
 }
 
 // copy an ast param list node
@@ -465,17 +476,31 @@ static ast prune_return_expr(ast t)
 //
 static ast prune_expr(ast t)
 {
-    vector<ast> terms ;
-
-    int size = size_of_expr(t) ;
-    for ( int i = 0 ; i < size ; i++ )
+    vector<ast> terms;
+    int size = size_of_expr(t);
+    
+    terms.push_back(prune_term(get_expr(t, 0)));
+    for (int i = 1; i < size; i=i+2)
     {
-        ast termop = get_expr(t,i) ;
-        termop = i % 2 == 0 ? prune_term(termop) : prune_infix_op(termop) ;
-        terms.push_back(termop) ;
+        ast op = prune_infix_op(get_expr(t, i));
+        ast lterm = terms.back();
+        ast rterm = prune_term(get_expr(t, i));
+
+        // evaluate
+        ast pruned = evaluete_expr(lterm, op, rterm);
+        if (pruned != nullptr)
+        {
+            terms.pop_back();
+            terms.push_back(pruned);
+        }
+        else
+        {
+            terms.push_back(op);
+            terms.push_back(rterm);
+        }
     }
 
-    return create_expr(get_ann(t),terms) ;
+    return create_expr(get_ann(t), terms);
 }
 
 // copy an ast term node with a single field
@@ -485,49 +510,49 @@ static ast prune_expr(ast t)
 //
 static ast prune_term(ast t)
 {
-    ast term = get_term_term(t) ;
+    ast term = get_term_term(t);
 
-    switch(ast_node_kind(term))
+    switch (ast_node_kind(term))
     {
     case ast_int:
-        term = prune_int(term) ;
-        break ;
+        term = prune_int(term);
+        break;
     case ast_string:
-        term = prune_string(term) ;
-        break ;
+        term = prune_string(term);
+        break;
     case ast_bool:
-        term = prune_bool(term) ;
-        break ;
+        term = prune_bool(term);
+        break;
     case ast_null:
-        term = prune_null(term) ;
-        break ;
+        term = prune_null(term);
+        break;
     case ast_this:
-        term = prune_this(term) ;
-        break ;
+        term = prune_this(term);
+        break;
     case ast_expr:
-        term = prune_expr(term) ;
-        break ;
+        term = prune_expr(term);
+        break;
     case ast_unary_op:
-        term = prune_unary_op(term) ;
-        break ;
+        term = prune_unary_op(term);
+        break;
     case ast_var:
-        term = prune_var(term) ;
-        break ;
+        term = prune_var(term);
+        break;
     case ast_array_index:
-        term = prune_array_index(term) ;
-        break ;
+        term = prune_array_index(term);
+        break;
     case ast_call_as_function:
-        term = prune_call_as_function(term) ;
-        break ;
+        term = prune_call_as_function(term);
+        break;
     case ast_call_as_method:
-        term = prune_call_as_method(term) ;
-        break ;
+        term = prune_call_as_method(term);
+        break;
     default:
-        fatal_error(0,"Unexpected term kind\n") ;
-        break ;
+        fatal_error(0, "Unexpected term kind\n");
+        break;
     }
-    
-    return create_term(get_ann(t),term) ;
+
+    return create_term(get_ann(t), term);
 }
 
 // copy an ast int node with a single field
@@ -535,9 +560,9 @@ static ast prune_term(ast t)
 //
 static ast prune_int(ast t)
 {
-    //int _constant = get_int_constant(t) ;
+    // int _constant = get_int_constant(t) ;
 
-    return t ;
+    return t;
 }
 
 // copy an ast string node with a single field
@@ -545,9 +570,9 @@ static ast prune_int(ast t)
 //
 static ast prune_string(ast t)
 {
-    //string _constant = get_string_constant(t) ;
+    // string _constant = get_string_constant(t) ;
 
-    return t ;
+    return t;
 }
 
 // copy an ast bool node with a single field
@@ -555,9 +580,9 @@ static ast prune_string(ast t)
 //
 static ast prune_bool(ast t)
 {
-    //bool _constant = get_bool_t_or_f(t) ;
+    // bool _constant = get_bool_t_or_f(t) ;
 
-    return t ;
+    return t;
 }
 
 // copy an ast null node, it has not fields
@@ -565,7 +590,7 @@ static ast prune_bool(ast t)
 //
 static ast prune_null(ast t)
 {
-    return t ;
+    return t;
 }
 
 // copy an ast this node, it has not fields
@@ -573,7 +598,7 @@ static ast prune_null(ast t)
 //
 static ast prune_this(ast t)
 {
-    return t ;
+    return t;
 }
 
 // copy an ast unary op node with fields
@@ -585,11 +610,11 @@ static ast prune_this(ast t)
 static ast prune_unary_op(ast t)
 {
     string uop = get_unary_op_op(t);
-    ast term = get_unary_op_term(t) ;
+    ast term = get_unary_op_term(t);
 
-    term = prune_term(term) ;
+    term = prune_term(term);
 
-    return create_unary_op(get_ann(t),uop,term) ;
+    return create_unary_op(get_ann(t), uop, term);
 }
 
 // copy an ast variable node with fields
@@ -600,12 +625,12 @@ static ast prune_unary_op(ast t)
 //
 static ast prune_var(ast t)
 {
-    //string name = get_var_name(t) ;
-    //string type = get_var_type(t) ;
-    //string segment = get_var_segment(t) ;
-    //int offset = get_var_offset(t) ;
+    // string name = get_var_name(t) ;
+    // string type = get_var_type(t) ;
+    // string segment = get_var_segment(t) ;
+    // int offset = get_var_offset(t) ;
 
-    return t ;
+    return t;
 }
 
 // copy an ast array index node with fields
@@ -614,13 +639,13 @@ static ast prune_var(ast t)
 //
 static ast prune_array_index(ast t)
 {
-    ast var = get_array_index_var(t) ;
-    ast index = get_array_index_index(t) ;
+    ast var = get_array_index_var(t);
+    ast index = get_array_index_index(t);
 
-    var = prune_var(var) ;
-    index = prune_expr(index) ;
+    var = prune_var(var);
+    index = prune_expr(index);
 
-    return create_array_index(get_ann(t),var,index) ;
+    return create_array_index(get_ann(t), var, index);
 }
 
 // copy an ast subr call as method with fields
@@ -629,12 +654,12 @@ static ast prune_array_index(ast t)
 //
 static ast prune_call_as_function(ast t)
 {
-    string class_name = get_call_as_function_class_name(t) ;
-    ast subr_call = get_call_as_function_subr_call(t) ;
+    string class_name = get_call_as_function_class_name(t);
+    ast subr_call = get_call_as_function_subr_call(t);
 
-    subr_call = prune_subr_call(subr_call) ;
+    subr_call = prune_subr_call(subr_call);
 
-    return create_call_as_function(get_ann(t),class_name,subr_call) ;
+    return create_call_as_function(get_ann(t), class_name, subr_call);
 }
 
 // copy an ast subr call as method with fields
@@ -644,14 +669,14 @@ static ast prune_call_as_function(ast t)
 //
 static ast prune_call_as_method(ast t)
 {
-    string class_name = get_call_as_method_class_name(t) ;
-    ast var = get_call_as_method_var(t) ;
-    ast subr_call = get_call_as_method_subr_call(t) ;
+    string class_name = get_call_as_method_class_name(t);
+    ast var = get_call_as_method_var(t);
+    ast subr_call = get_call_as_method_subr_call(t);
 
-    var = ast_node_kind(var) == ast_var ? prune_var(var) : prune_this(var) ;
-    subr_call = prune_subr_call(subr_call) ;
+    var = ast_node_kind(var) == ast_var ? prune_var(var) : prune_this(var);
+    subr_call = prune_subr_call(subr_call);
 
-    return create_call_as_method(get_ann(t),class_name,var,subr_call) ;
+    return create_call_as_method(get_ann(t), class_name, var, subr_call);
 }
 
 // copy an ast subr call node with fields
@@ -660,12 +685,12 @@ static ast prune_call_as_method(ast t)
 //
 static ast prune_subr_call(ast t)
 {
-    string subr_name = get_subr_call_subr_name(t) ;
-    ast expr_list = get_subr_call_expr_list(t) ;
+    string subr_name = get_subr_call_subr_name(t);
+    ast expr_list = get_subr_call_expr_list(t);
 
-    expr_list = prune_expr_list(expr_list) ;
+    expr_list = prune_expr_list(expr_list);
 
-    return create_subr_call(get_ann(t),subr_name,expr_list) ;
+    return create_subr_call(get_ann(t), subr_name, expr_list);
 }
 
 // copy an ast expr list node
@@ -673,16 +698,16 @@ static ast prune_subr_call(ast t)
 //
 static ast prune_expr_list(ast t)
 {
-    vector<ast> exprs ;
+    vector<ast> exprs;
 
-    int size = size_of_expr_list(t) ;
-    for ( int i = 0 ; i < size ; i++ )
+    int size = size_of_expr_list(t);
+    for (int i = 0; i < size; i++)
     {
-        ast expri = get_expr_list(t,i) ;
-        exprs.push_back(prune_expr(expri)) ;
+        ast expri = get_expr_list(t, i);
+        exprs.push_back(prune_expr(expri));
     }
 
-    return create_expr_list(get_ann(t),exprs) ;
+    return create_expr_list(get_ann(t), exprs);
 }
 
 // copy an ast infix op node with a single field
@@ -690,19 +715,18 @@ static ast prune_expr_list(ast t)
 //
 static ast prune_infix_op(ast t)
 {
-    //string op = get_infix_op_op(t) ;
+    // string op = get_infix_op_op(t) ;
 
-    return t ;
+    return t;
 }
 
 // main program
-int main(int argc,char **argv)
+int main(int argc, char **argv)
 {
     // walk an AST in XML and print VM code
-    ast_print_as_xml(prune_class(ast_parse_xml()),3) ;
+    ast_print_as_xml(prune_class(ast_parse_xml()), 3);
 
     // flush the output and any errors
-    print_output() ;
-    print_errors() ;
+    print_output();
+    print_errors();
 }
-
