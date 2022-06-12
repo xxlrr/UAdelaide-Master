@@ -95,12 +95,21 @@ static void print_class(ast t)
     ast fields = get_class_fields(t) ;
     ast subr_decs = get_class_subr_decs(t) ;
 
+    int nstatics = size_of_class_var_decs(statics);
+    int nfields = size_of_class_var_decs(fields);
+    int nsubr = size_of_subr_decs(subr_decs);
+
     write_to_output_with_indent("class " + ClassName + "\n") ;
     write_to_output_with_indent("{\n") ;
     IndentLevel++ ;
 
+    if (nstatics > 0 || nfields > 0) write_to_output("// private:\n") ;
     print_class_var_decs(statics) ;
+    if (nstatics> 0 && nfields > 0) write_to_output("\n") ;
     print_class_var_decs(fields) ;
+    if (nsubr > 0 && (nstatics > 0 || nfields > 0)) write_to_output("\n") ;
+
+    if (nsubr > 0) write_to_output("// public:\n") ;
     print_subr_decs(subr_decs) ;
 
     IndentLevel-- ;
@@ -113,7 +122,7 @@ static void print_class(ast t)
 static void print_class_var_decs(ast t)
 {
     int ndecs = size_of_class_var_decs(t) ;
-    if (ndecs > 0) write_to_output("// private:\n") ;
+
     for ( int i = 0 ; i < ndecs ; i++ )
     {
         print_var_dec(get_class_var_decs(t,i)) ;
@@ -160,11 +169,13 @@ static void print_var_dec(ast t)
 static void print_subr_decs(ast t)
 {
     int size = size_of_subr_decs(t) ;
-    if (size > 0) write_to_output("// public:\n") ;
-    for ( int i = 0 ; i < size ; i++ )
+
+    for ( int i = 0 ; i < size - 1 ; i++ )
     {
         print_subr(get_subr_decs(t,i)) ;
+        write_to_output("\n") ;
     }
+    if (size > 0) print_subr(get_subr_decs(t,size-1)) ;
 }
 
 // walk an ast subroutine node with a single field
@@ -744,6 +755,7 @@ static void print_expr_list(ast t)
     for ( int i = 0 ; i < nexpressions - 1 ; i++ )
     {
         print_expr(get_expr_list(t,i)) ;
+        write_to_output(",") ;
     }
     if ( nexpressions > 0 ) print_expr(get_expr_list(t,nexpressions-1)) ;
 }
