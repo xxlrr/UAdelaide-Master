@@ -14,10 +14,10 @@
 #endif
 
 // to shorten our code:
-using namespace std ;
-using namespace CS_IO_Buffers ;
-using namespace Jack_Compiler ;
-    
+using namespace std;
+using namespace CS_IO_Buffers;
+using namespace Jack_Compiler;
+
 #pragma clang diagnostic ignored "-Wunused-function"
 
 // ***** WHAT TO DO *****
@@ -37,48 +37,49 @@ using namespace Jack_Compiler ;
 //  - you can change it as much as you like
 
 // forward declarations of one function per node in the abstract syntax tree
-static void print_class(ast t) ;
-static void print_class_var_decs(ast t) ;
-static void print_var_dec(ast t) ;
-static void print_subr_decs(ast t) ;
-static void print_subr(ast t) ;
-static void print_constructor(ast t) ;
-static void print_function(ast t) ;
-static void print_method(ast t) ;
-static void print_param_list(ast t) ;
-static void print_subr_body(ast t) ;
-static void print_var_decs(ast t) ;
-static void print_statements(ast t) ;
-static void print_statement(ast t) ;
-static void print_let(ast t) ;
-static void print_let_array(ast t) ;
-static void print_if(ast t) ;
-static void print_if_else(ast t) ;
-static void print_while(ast t) ;
-static void print_do(ast t) ;
-static void print_return(ast t) ;
-static void print_return_expr(ast t) ;
-static void print_expr(ast t) ;
-static void print_term(ast t) ;
-static void print_int(ast t) ;
-static void print_string(ast t) ;
-static void print_bool(ast t) ;
-static void print_null(ast t) ;
-static void print_this(ast t) ;
-static void print_unary_op(ast t) ;
-static void print_var(ast t) ;
-static void print_array_index(ast t) ;
-static void print_call_as_function(ast t) ;
-static void print_call_as_method(ast t) ;
-static void print_subr_call(ast t) ;
-static void print_expr_list(ast t) ;
-static void print_infix_op(ast t) ;
+static void print_class(ast t);
+static void print_class_var_decs(ast t);
+static void print_var_dec(ast t);
+static void print_subr_decs(ast t);
+static void print_subr(ast t);
+static void print_constructor(ast t);
+static void print_function(ast t);
+static void print_method(ast t);
+static void print_param_list(ast t);
+static void print_subr_body(ast t);
+static void print_var_decs(ast t);
+static void print_statements(ast t);
+static void print_statement(ast t);
+static void print_let(ast t);
+static void print_let_array(ast t);
+static void print_if(ast t);
+static void print_if_else(ast t);
+static void print_while(ast t);
+static void print_do(ast t);
+static void print_return(ast t);
+static void print_return_expr(ast t);
+static void print_expr(ast t);
+static void print_term(ast t);
+static void print_int(ast t);
+static void print_string(ast t);
+static void print_bool(ast t);
+static void print_null(ast t);
+static void print_this(ast t);
+static void print_unary_op(ast t);
+static void print_var(ast t);
+static void print_array_index(ast t);
+static void print_call_as_function(ast t);
+static void print_call_as_method(ast t);
+static void print_subr_call(ast t);
+static void print_expr_list(ast t);
+static void print_infix_op(ast t);
 
-static int IndentLevel = 0 ;
+static int IndentLevel = 0;
 
 // write s to output buffer with proper indentation
-static void write_to_output_with_indent(string s) {
-    write_to_output(string(IndentLevel * INDENT_SIZE, ' ') + s) ;
+static void write_to_output_with_indent(string s)
+{
+    write_to_output(string(IndentLevel * INDENT_SIZE, ' ') + s);
 }
 
 // walk an ast class node with fields:
@@ -87,33 +88,37 @@ static void write_to_output_with_indent(string s) {
 // fields     - ast vector of variable declarations
 // subr_decs  - ast vector of subroutine declarations
 //
-static string ClassName ;
+static string ClassName;
 static void print_class(ast t)
 {
-    ClassName = get_class_class_name(t) ;
-    ast statics = get_class_statics(t) ;
-    ast fields = get_class_fields(t) ;
-    ast subr_decs = get_class_subr_decs(t) ;
+    ClassName = get_class_class_name(t);
+    ast statics = get_class_statics(t);
+    ast fields = get_class_fields(t);
+    ast subr_decs = get_class_subr_decs(t);
 
     int nstatics = size_of_class_var_decs(statics);
     int nfields = size_of_class_var_decs(fields);
     int nsubr = size_of_subr_decs(subr_decs);
 
-    write_to_output_with_indent("class " + ClassName + "\n") ;
-    write_to_output_with_indent("{\n") ;
-    IndentLevel++ ;
+    write_to_output_with_indent("class " + ClassName + "\n");
+    write_to_output_with_indent("{\n");
+    IndentLevel++;
 
-    if (nstatics > 0 || nfields > 0) write_to_output("// private:\n") ;
-    print_class_var_decs(statics) ;
-    if (nstatics> 0 && nfields > 0) write_to_output("\n") ;
-    print_class_var_decs(fields) ;
-    if (nsubr > 0 && (nstatics > 0 || nfields > 0)) write_to_output("\n") ;
+    if (nstatics > 0 || nfields > 0)
+        write_to_output("// private:\n");
+    print_class_var_decs(statics);
+    if (nstatics > 0 && nfields > 0)
+        write_to_output("\n");
+    print_class_var_decs(fields);
+    if (nsubr > 0 && (nstatics > 0 || nfields > 0))
+        write_to_output("\n");
 
-    if (nsubr > 0) write_to_output("// public:\n") ;
-    print_subr_decs(subr_decs) ;
+    if (nsubr > 0)
+        write_to_output("// public:\n");
+    print_subr_decs(subr_decs);
 
-    IndentLevel-- ;
-    write_to_output_with_indent("}\n") ;
+    IndentLevel--;
+    write_to_output_with_indent("}\n");
 }
 
 // walk an ast class var decs node
@@ -121,11 +126,11 @@ static void print_class(ast t)
 //
 static void print_class_var_decs(ast t)
 {
-    int ndecs = size_of_class_var_decs(t) ;
+    int ndecs = size_of_class_var_decs(t);
 
-    for ( int i = 0 ; i < ndecs ; i++ )
+    for (int i = 0; i < ndecs; i++)
     {
-        print_var_dec(get_class_var_decs(t,i)) ;
+        print_var_dec(get_class_var_decs(t, i));
     }
 }
 
@@ -138,27 +143,27 @@ static void print_class_var_decs(ast t)
 //
 static void print_var_dec(ast t)
 {
-    string name = get_var_dec_name(t) ;
-    string type = get_var_dec_type(t) ;
-    string segment = get_var_dec_segment(t) ;
-    //int offset = get_var_dec_offset(t) ;
+    string name = get_var_dec_name(t);
+    string type = get_var_dec_type(t);
+    string segment = get_var_dec_segment(t);
+    // int offset = get_var_dec_offset(t) ;
 
-    switch (segment[0]) 
+    switch (segment[0])
     {
-    case 'l':       // local
-        write_to_output_with_indent("var " + type + " " + name + " ;\n") ;
-        break ;
-    case 's':       // static
-        write_to_output_with_indent("static " + type + " " + name + " ;\n") ;
-        break ;
-    case 't':       // this
-        write_to_output_with_indent("field " + type + " " + name + " ;\n") ;
-        break ;
-    case 'a':       // argument
-        write_to_output(type + " " + name) ;
-        break ;
-    default:        // error
-        write_to_output("/* unknown segment: " + segment + " */") ;
+    case 'l': // local
+        write_to_output_with_indent("var " + type + " " + name + " ;\n");
+        break;
+    case 's': // static
+        write_to_output_with_indent("static " + type + " " + name + " ;\n");
+        break;
+    case 't': // this
+        write_to_output_with_indent("field " + type + " " + name + " ;\n");
+        break;
+    case 'a': // argument
+        write_to_output(type + " " + name);
+        break;
+    default: // error
+        write_to_output("/* unknown segment: " + segment + " */");
         break;
     }
 }
@@ -168,14 +173,15 @@ static void print_var_dec(ast t)
 //
 static void print_subr_decs(ast t)
 {
-    int size = size_of_subr_decs(t) ;
+    int size = size_of_subr_decs(t);
 
-    for ( int i = 0 ; i < size - 1 ; i++ )
+    for (int i = 0; i < size - 1; i++)
     {
-        print_subr(get_subr_decs(t,i)) ;
-        write_to_output("\n") ;
+        print_subr(get_subr_decs(t, i));
+        write_to_output("\n");
     }
-    if (size > 0) print_subr(get_subr_decs(t,size-1)) ;
+    if (size > 0)
+        print_subr(get_subr_decs(t, size - 1));
 }
 
 // walk an ast subroutine node with a single field
@@ -183,22 +189,22 @@ static void print_subr_decs(ast t)
 //
 static void print_subr(ast t)
 {
-    ast subr = get_subr_subr(t) ;
+    ast subr = get_subr_subr(t);
 
-    switch(ast_node_kind(subr))
+    switch (ast_node_kind(subr))
     {
     case ast_constructor:
-        print_constructor(subr) ;
-        break ;
+        print_constructor(subr);
+        break;
     case ast_function:
-        print_function(subr) ;
-        break ;
+        print_function(subr);
+        break;
     case ast_method:
-        print_method(subr) ;
-        break ;
+        print_method(subr);
+        break;
     default:
-        fatal_error(0,"Unexpected subroutine kind") ;
-        break ;
+        fatal_error(0, "Unexpected subroutine kind");
+        break;
     }
 }
 
@@ -210,16 +216,16 @@ static void print_subr(ast t)
 //
 static void print_constructor(ast t)
 {
-    //string vtype = get_constructor_vtype(t) ;
-    string name = get_constructor_name(t) ;
-    ast param_list = get_constructor_param_list(t) ;
-    ast subr_body = get_constructor_subr_body(t) ;
+    // string vtype = get_constructor_vtype(t) ;
+    string name = get_constructor_name(t);
+    ast param_list = get_constructor_param_list(t);
+    ast subr_body = get_constructor_subr_body(t);
 
-    write_to_output_with_indent("constructor " + ClassName + " " + name + "(") ;
-    print_param_list(param_list) ;
-    write_to_output(")\n") ;
+    write_to_output_with_indent("constructor " + ClassName + " " + name + "(");
+    print_param_list(param_list);
+    write_to_output(")\n");
 
-    print_subr_body(subr_body) ;
+    print_subr_body(subr_body);
 }
 
 // walk an ast function node with fields
@@ -230,16 +236,16 @@ static void print_constructor(ast t)
 //
 static void print_function(ast t)
 {
-    string vtype = get_function_vtype(t) ;
-    string name = get_function_name(t) ;
-    ast param_list = get_function_param_list(t) ;
-    ast subr_body = get_function_subr_body(t) ;
+    string vtype = get_function_vtype(t);
+    string name = get_function_name(t);
+    ast param_list = get_function_param_list(t);
+    ast subr_body = get_function_subr_body(t);
 
-    write_to_output_with_indent("function " + vtype + " " + name + "(") ;
-    print_param_list(param_list) ;
-    write_to_output(")\n") ;
+    write_to_output_with_indent("function " + vtype + " " + name + "(");
+    print_param_list(param_list);
+    write_to_output(")\n");
 
-    print_subr_body(subr_body) ;
+    print_subr_body(subr_body);
 }
 
 // walk an ast method node with fields
@@ -250,16 +256,16 @@ static void print_function(ast t)
 //
 static void print_method(ast t)
 {
-    string vtype = get_method_vtype(t) ;
-    string name = get_method_name(t) ;
-    ast param_list = get_method_param_list(t) ;
-    ast subr_body = get_method_subr_body(t) ;
+    string vtype = get_method_vtype(t);
+    string name = get_method_name(t);
+    ast param_list = get_method_param_list(t);
+    ast subr_body = get_method_subr_body(t);
 
-    write_to_output_with_indent("method " + vtype + " " + name + "(") ;
-    print_param_list(param_list) ;
-    write_to_output(")\n") ;
+    write_to_output_with_indent("method " + vtype + " " + name + "(");
+    print_param_list(param_list);
+    write_to_output(")\n");
 
-    print_subr_body(subr_body) ;
+    print_subr_body(subr_body);
 }
 
 // walk an ast param list node
@@ -267,13 +273,14 @@ static void print_method(ast t)
 //
 static void print_param_list(ast t)
 {
-    int ndecs = size_of_param_list(t) ;
+    int ndecs = size_of_param_list(t);
     for (int i = 0; i < ndecs - 1; i++)
     {
         print_var_dec(get_param_list(t, i));
         write_to_output(",");
     }
-    if (ndecs > 0) print_var_dec(get_param_list(t, ndecs - 1));
+    if (ndecs > 0)
+        print_var_dec(get_param_list(t, ndecs - 1));
 }
 
 // walk an ast subr body node with fields
@@ -282,17 +289,17 @@ static void print_param_list(ast t)
 //
 static void print_subr_body(ast t)
 {
-    ast decs = get_subr_body_decs(t) ;
-    ast body = get_subr_body_body(t) ;
+    ast decs = get_subr_body_decs(t);
+    ast body = get_subr_body_body(t);
 
-    write_to_output_with_indent("{\n") ;
-    IndentLevel++ ;
+    write_to_output_with_indent("{\n");
+    IndentLevel++;
 
-    print_var_decs(decs) ;
-    print_statements(body) ;
+    print_var_decs(decs);
+    print_statements(body);
 
-    IndentLevel-- ;
-    write_to_output_with_indent("}\n") ;
+    IndentLevel--;
+    write_to_output_with_indent("}\n");
 }
 
 // walk an ast param list node
@@ -300,12 +307,13 @@ static void print_subr_body(ast t)
 //
 static void print_var_decs(ast t)
 {
-    int ndecs = size_of_var_decs(t) ;
-    for ( int i = 0 ; i < ndecs ; i++ )
+    int ndecs = size_of_var_decs(t);
+    for (int i = 0; i < ndecs; i++)
     {
-        print_var_dec(get_var_decs(t,i)) ;
+        print_var_dec(get_var_decs(t, i));
     }
-    if (ndecs > 0) write_to_output("\n") ;
+    if (ndecs > 0)
+        write_to_output("\n");
 }
 
 // walk an ast statements node
@@ -314,11 +322,11 @@ static void print_var_decs(ast t)
 static bool need_empty_line;
 static void print_statements(ast t)
 {
-    int nstatements = size_of_statements(t) ;
+    int nstatements = size_of_statements(t);
     need_empty_line = false;
-    for ( int i = 0 ; i < nstatements ; i++ )
+    for (int i = 0; i < nstatements; i++)
     {
-        print_statement(get_statements(t,i)) ;
+        print_statement(get_statements(t, i));
     }
     need_empty_line = false;
 }
@@ -328,49 +336,49 @@ static void print_statements(ast t)
 //
 static void print_statement(ast t)
 {
-    ast statement = get_statement_statement(t) ;
+    ast statement = get_statement_statement(t);
 
     if (need_empty_line)
     {
-        write_to_output("\n") ;
+        write_to_output("\n");
         need_empty_line = false;
     }
 
-    switch(ast_node_kind(statement))
+    switch (ast_node_kind(statement))
     {
     case ast_let:
-        print_let(statement) ;
-        break ;
+        print_let(statement);
+        break;
     case ast_let_array:
-        print_let_array(statement) ;
-        break ;
+        print_let_array(statement);
+        break;
     case ast_if:
-        print_if(statement) ;
+        print_if(statement);
         need_empty_line = true;
-        break ;
+        break;
     case ast_if_else:
-        print_if_else(statement) ;
+        print_if_else(statement);
         need_empty_line = true;
-        break ;
+        break;
     case ast_while:
-        print_while(statement) ;
+        print_while(statement);
         need_empty_line = true;
-        break ;
+        break;
     case ast_do:
-        print_do(statement) ;
-        break ;
+        print_do(statement);
+        break;
     case ast_return:
-        print_return(statement) ;
-        break ;
+        print_return(statement);
+        break;
     case ast_return_expr:
-        print_return_expr(statement) ;
-        break ;
+        print_return_expr(statement);
+        break;
     case ast_statements:
-        print_statements(statement) ;
-        break ;
+        print_statements(statement);
+        break;
     default:
-        fatal_error(0,"Unexpected statement kind") ;
-        break ;
+        fatal_error(0, "Unexpected statement kind");
+        break;
     }
 }
 
@@ -380,14 +388,14 @@ static void print_statement(ast t)
 //
 static void print_let(ast t)
 {
-    ast var = get_let_var(t) ;
-    ast expr = get_let_expr(t) ;
+    ast var = get_let_var(t);
+    ast expr = get_let_expr(t);
 
-    write_to_output_with_indent("let ") ;
-    print_var(var) ;
-    write_to_output(" = ") ;
-    print_expr(expr) ;
-    write_to_output(" ;\n") ;
+    write_to_output_with_indent("let ");
+    print_var(var);
+    write_to_output(" = ");
+    print_expr(expr);
+    write_to_output(" ;\n");
 }
 
 // walk an ast let array node with fields
@@ -397,17 +405,17 @@ static void print_let(ast t)
 //
 static void print_let_array(ast t)
 {
-    ast var = get_let_array_var(t) ;
-    ast index = get_let_array_index(t) ;
-    ast expr = get_let_array_expr(t) ;
+    ast var = get_let_array_var(t);
+    ast index = get_let_array_index(t);
+    ast expr = get_let_array_expr(t);
 
-    write_to_output_with_indent("let ") ;
-    print_var(var) ;
-    write_to_output("[") ;
-    print_expr(index) ;
-    write_to_output("] = ") ;
-    print_expr(expr) ;
-    write_to_output(" ;\n") ;
+    write_to_output_with_indent("let ");
+    print_var(var);
+    write_to_output("[");
+    print_expr(index);
+    write_to_output("] = ");
+    print_expr(expr);
+    write_to_output(" ;\n");
 }
 
 // walk an ast if node with fields
@@ -416,20 +424,20 @@ static void print_let_array(ast t)
 //
 static void print_if(ast t)
 {
-    ast condition = get_if_condition(t) ;
-    ast if_true = get_if_if_true(t) ;
+    ast condition = get_if_condition(t);
+    ast if_true = get_if_if_true(t);
 
-    write_to_output_with_indent("if (") ;
-    print_expr(condition) ;
-    write_to_output(")\n") ;
+    write_to_output_with_indent("if (");
+    print_expr(condition);
+    write_to_output(")\n");
 
-    write_to_output_with_indent("{\n") ;
-    IndentLevel++ ;
+    write_to_output_with_indent("{\n");
+    IndentLevel++;
 
-    print_statements(if_true) ;
+    print_statements(if_true);
 
-    IndentLevel-- ;
-    write_to_output_with_indent("}\n") ;
+    IndentLevel--;
+    write_to_output_with_indent("}\n");
 }
 
 // walk an ast if else node with fields
@@ -439,31 +447,31 @@ static void print_if(ast t)
 //
 static void print_if_else(ast t)
 {
-    ast condition = get_if_else_condition(t) ;
-    ast if_true = get_if_else_if_true(t) ;
-    ast if_false = get_if_else_if_false(t) ;
+    ast condition = get_if_else_condition(t);
+    ast if_true = get_if_else_if_true(t);
+    ast if_false = get_if_else_if_false(t);
 
-    write_to_output_with_indent("if (") ;
-    print_expr(condition) ;
-    write_to_output(")\n") ;
+    write_to_output_with_indent("if (");
+    print_expr(condition);
+    write_to_output(")\n");
 
-    write_to_output_with_indent("{\n") ;
-    IndentLevel++ ;
+    write_to_output_with_indent("{\n");
+    IndentLevel++;
 
-    print_statements(if_true) ;
+    print_statements(if_true);
 
-    IndentLevel-- ;
-    write_to_output_with_indent("}\n") ;
+    IndentLevel--;
+    write_to_output_with_indent("}\n");
 
-    write_to_output_with_indent("else\n") ;
+    write_to_output_with_indent("else\n");
 
-    write_to_output_with_indent("{\n") ;
-    IndentLevel++ ;
+    write_to_output_with_indent("{\n");
+    IndentLevel++;
 
-    print_statements(if_false) ;
+    print_statements(if_false);
 
-    IndentLevel-- ;
-    write_to_output_with_indent("}\n") ;
+    IndentLevel--;
+    write_to_output_with_indent("}\n");
 }
 
 // walk an ast while node with fields
@@ -472,20 +480,20 @@ static void print_if_else(ast t)
 //
 static void print_while(ast t)
 {
-    ast condition = get_while_condition(t) ;
-    ast body = get_while_body(t) ;
+    ast condition = get_while_condition(t);
+    ast body = get_while_body(t);
 
-    write_to_output_with_indent("while (") ;
-    print_expr(condition) ;
-    write_to_output(")\n") ;
+    write_to_output_with_indent("while (");
+    print_expr(condition);
+    write_to_output(")\n");
 
-    write_to_output_with_indent("{\n") ;
-    IndentLevel++ ;
+    write_to_output_with_indent("{\n");
+    IndentLevel++;
 
-    print_statements(body) ;
+    print_statements(body);
 
-    IndentLevel-- ;
-    write_to_output_with_indent("}\n") ;
+    IndentLevel--;
+    write_to_output_with_indent("}\n");
 }
 
 // walk an ast do node with a single field
@@ -493,29 +501,29 @@ static void print_while(ast t)
 //
 static void print_do(ast t)
 {
-    ast call = get_do_call(t) ;
+    ast call = get_do_call(t);
 
-    write_to_output_with_indent("do ") ;
-    switch(ast_node_kind(call))
+    write_to_output_with_indent("do ");
+    switch (ast_node_kind(call))
     {
     case ast_call_as_function:
-        print_call_as_function(call) ;
-        break ;
+        print_call_as_function(call);
+        break;
     case ast_call_as_method:
-        print_call_as_method(call) ;
-        break ;
+        print_call_as_method(call);
+        break;
     default:
-        fatal_error(0,"Unexpected call kind") ;
-        break ;
+        fatal_error(0, "Unexpected call kind");
+        break;
     }
-    write_to_output(" ;\n") ;
+    write_to_output(" ;\n");
 }
 
 // walk an ast return node, it has not fields
 //
 static void print_return(ast t)
 {
-    write_to_output_with_indent("return ;\n") ;
+    write_to_output_with_indent("return ;\n");
 }
 
 // walk an ast return expr node with a single field
@@ -523,11 +531,11 @@ static void print_return(ast t)
 //
 static void print_return_expr(ast t)
 {
-    ast expr = get_return_expr(t) ;
+    ast expr = get_return_expr(t);
 
-    write_to_output_with_indent("return ") ;
-    print_expr(expr) ;
-    write_to_output(" ;\n") ;
+    write_to_output_with_indent("return ");
+    print_expr(expr);
+    write_to_output(" ;\n");
 }
 
 // walk an ast param list node
@@ -538,17 +546,17 @@ static void print_return_expr(ast t)
 //
 static void print_expr(ast t)
 {
-    int term_ops = size_of_expr(t) ;
-    for ( int i = 0 ; i < term_ops ; i++ )
+    int term_ops = size_of_expr(t);
+    for (int i = 0; i < term_ops; i++)
     {
-        ast term_op = get_expr(t,i) ;
-        if ( i % 2 == 0 )
+        ast term_op = get_expr(t, i);
+        if (i % 2 == 0)
         {
-            print_term(term_op) ;
+            print_term(term_op);
         }
         else
         {
-            print_infix_op(term_op) ;
+            print_infix_op(term_op);
         }
     }
 }
@@ -560,46 +568,48 @@ static void print_expr(ast t)
 //
 static void print_term(ast t)
 {
-    ast term = get_term_term(t) ;
+    ast term = get_term_term(t);
 
-    switch(ast_node_kind(term))
+    switch (ast_node_kind(term))
     {
     case ast_int:
-        print_int(term) ;
-        break ;
+        print_int(term);
+        break;
     case ast_string:
-        print_string(term) ;
-        break ;
+        print_string(term);
+        break;
     case ast_bool:
-        print_bool(term) ;
-        break ;
+        print_bool(term);
+        break;
     case ast_null:
-        print_null(term) ;
-        break ;
+        print_null(term);
+        break;
     case ast_this:
-        print_this(term) ;
-        break ;
+        print_this(term);
+        break;
     case ast_expr:
-        print_expr(term) ;
-        break ;
+        write_to_output("(");
+        print_expr(term);
+        write_to_output(")");
+        break;
     case ast_unary_op:
-        print_unary_op(term) ;
-        break ;
+        print_unary_op(term);
+        break;
     case ast_var:
-        print_var(term) ;
-        break ;
+        print_var(term);
+        break;
     case ast_array_index:
-        print_array_index(term) ;
-        break ;
+        print_array_index(term);
+        break;
     case ast_call_as_function:
-        print_call_as_function(term) ;
-        break ;
+        print_call_as_function(term);
+        break;
     case ast_call_as_method:
-        print_call_as_method(term) ;
-        break ;
+        print_call_as_method(term);
+        break;
     default:
-        fatal_error(0,"Unexpected term kind") ;
-        break ;
+        fatal_error(0, "Unexpected term kind");
+        break;
     }
 }
 
@@ -608,9 +618,9 @@ static void print_term(ast t)
 //
 static void print_int(ast t)
 {
-    int _constant = get_int_constant(t) ;
+    int _constant = get_int_constant(t);
     // todo
-    write_to_output(to_string(_constant)) ;
+    write_to_output(to_string(_constant));
 }
 
 // walk an ast string node with a single field
@@ -618,10 +628,10 @@ static void print_int(ast t)
 //
 static void print_string(ast t)
 {
-    write_to_output("\"") ;
-    string _constant = get_string_constant(t) ;
-    write_to_output(_constant) ;
-    write_to_output("\"") ;
+    write_to_output("\"");
+    string _constant = get_string_constant(t);
+    write_to_output(_constant);
+    write_to_output("\"");
 }
 
 // walk an ast bool node with a single field
@@ -629,22 +639,22 @@ static void print_string(ast t)
 //
 static void print_bool(ast t)
 {
-    bool _constant = get_bool_t_or_f(t) ;
-    write_to_output(_constant ? "true" : "false") ;
+    bool _constant = get_bool_t_or_f(t);
+    write_to_output(_constant ? "true" : "false");
 }
 
 // walk an ast null node, it has not fields
 //
 static void print_null(ast t)
 {
-    write_to_output("null") ;
+    write_to_output("null");
 }
 
 // walk an ast this node, it has not fields
 //
 static void print_this(ast t)
 {
-    write_to_output("this") ;
+    write_to_output("this");
 }
 
 // walk an ast unary op node with fields
@@ -657,9 +667,9 @@ static void print_unary_op(ast t)
 {
     // todo
     // string uop = get_unary_op_op(t);
-    ast term = get_unary_op_term(t) ;
+    ast term = get_unary_op_term(t);
 
-    print_term(term) ;
+    print_term(term);
 }
 
 // walk an ast variable node with fields
@@ -670,11 +680,11 @@ static void print_unary_op(ast t)
 //
 static void print_var(ast t)
 {
-    string name = get_var_name(t) ;
-    //string type = get_var_type(t) ;
-    //string segment = get_var_segment(t) ;
-    //int offset = get_var_offset(t) ;
-    write_to_output(name) ;
+    string name = get_var_name(t);
+    // string type = get_var_type(t) ;
+    // string segment = get_var_segment(t) ;
+    // int offset = get_var_offset(t) ;
+    write_to_output(name);
 }
 
 // walk an ast array index node with fields
@@ -683,13 +693,13 @@ static void print_var(ast t)
 //
 static void print_array_index(ast t)
 {
-    ast var = get_array_index_var(t) ;
-    ast index = get_array_index_index(t) ;
+    ast var = get_array_index_var(t);
+    ast index = get_array_index_index(t);
 
-    print_var(var) ;
-    write_to_output("[") ;
-    print_expr(index) ;
-    write_to_output("]") ;
+    print_var(var);
+    write_to_output("[");
+    print_expr(index);
+    write_to_output("]");
 }
 
 // walk an ast subr call as method with fields
@@ -698,11 +708,11 @@ static void print_array_index(ast t)
 //
 static void print_call_as_function(ast t)
 {
-    string class_name = get_call_as_function_class_name(t) ;
-    ast subr_call = get_call_as_function_subr_call(t) ;
+    string class_name = get_call_as_function_class_name(t);
+    ast subr_call = get_call_as_function_subr_call(t);
 
-    write_to_output(class_name + "::") ;
-    print_subr_call(subr_call) ;
+    write_to_output(class_name + "::");
+    print_subr_call(subr_call);
 }
 
 // walk an ast subr call as method with fields
@@ -712,25 +722,25 @@ static void print_call_as_function(ast t)
 //
 static void print_call_as_method(ast t)
 {
-    string class_name = get_call_as_method_class_name(t) ;
-    ast var = get_call_as_method_var(t) ;
-    ast subr_call = get_call_as_method_subr_call(t) ;
+    string class_name = get_call_as_method_class_name(t);
+    ast var = get_call_as_method_var(t);
+    ast subr_call = get_call_as_method_subr_call(t);
 
-    switch(ast_node_kind(var))
+    switch (ast_node_kind(var))
     {
     case ast_this:
-        print_this(var) ;
-        write_to_output(".") ;
-        break ;
+        print_this(var);
+        write_to_output(".");
+        break;
     case ast_var:
-        print_var(var) ;
-        write_to_output(".") ;
-        break ;
+        print_var(var);
+        write_to_output(".");
+        break;
     default:
-        fatal_error(0,"Expected var or this") ;
-        break ;
+        fatal_error(0, "Expected var or this");
+        break;
     }
-    print_subr_call(subr_call) ;
+    print_subr_call(subr_call);
 }
 
 // walk an ast subr call node with fields
@@ -739,12 +749,12 @@ static void print_call_as_method(ast t)
 //
 static void print_subr_call(ast t)
 {
-    string subr_name = get_subr_call_subr_name(t) ;
-    ast expr_list = get_subr_call_expr_list(t) ;
+    string subr_name = get_subr_call_subr_name(t);
+    ast expr_list = get_subr_call_expr_list(t);
 
-    write_to_output(subr_name + "(") ;
-    print_expr_list(expr_list) ;
-    write_to_output(")") ;
+    write_to_output(subr_name + "(");
+    print_expr_list(expr_list);
+    write_to_output(")");
 }
 
 // walk an ast expr list node
@@ -752,13 +762,14 @@ static void print_subr_call(ast t)
 //
 static void print_expr_list(ast t)
 {
-    int nexpressions = size_of_expr_list(t) ;
-    for ( int i = 0 ; i < nexpressions - 1 ; i++ )
+    int nexpressions = size_of_expr_list(t);
+    for (int i = 0; i < nexpressions - 1; i++)
     {
-        print_expr(get_expr_list(t,i)) ;
-        write_to_output(",") ;
+        print_expr(get_expr_list(t, i));
+        write_to_output(",");
     }
-    if ( nexpressions > 0 ) print_expr(get_expr_list(t,nexpressions-1)) ;
+    if (nexpressions > 0)
+        print_expr(get_expr_list(t, nexpressions - 1));
 }
 
 // walk an ast infix op node with a single field
@@ -766,20 +777,19 @@ static void print_expr_list(ast t)
 //
 static void print_infix_op(ast t)
 {
-    string op = get_infix_op_op(t) ;
+    string op = get_infix_op_op(t);
 
-    op = (op == "=" ? "==" : op) ;
-    write_to_output(" " + op + " ") ;
+    op = (op == "=" ? "==" : op);
+    write_to_output(" " + op + " ");
 }
 
 // main program
-int main(int argc,char **argv)
+int main(int argc, char **argv)
 {
     // walk an AST parsed from XML and pretty print equivalent Jack code
-    print_class(ast_parse_xml()) ;
+    print_class(ast_parse_xml());
 
     // flush the output and any errors
-    print_output() ;
-    print_errors() ;
+    print_output();
+    print_errors();
 }
-
