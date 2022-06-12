@@ -619,8 +619,13 @@ static void print_term(ast t)
 static void print_int(ast t)
 {
     int _constant = get_int_constant(t);
-    // todo
-    write_to_output(to_string(_constant));
+
+    if (_constant >= 0)
+        write_to_output(to_string(_constant));
+    else if (_constant == -32768)
+        write_to_output("~(32767 + 1)");
+    else
+        write_to_output("~(" + to_string(-_constant) + ")");
 }
 
 // walk an ast string node with a single field
