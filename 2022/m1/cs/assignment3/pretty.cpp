@@ -73,7 +73,9 @@ static void print_call_as_method(ast t);
 static void print_subr_call(ast t);
 static void print_expr_list(ast t);
 static void print_infix_op(ast t);
+static void write_to_output_with_indent(string s);
 
+// record the indentation level
 static int IndentLevel = 0;
 
 // write s to output buffer with proper indentation
@@ -91,6 +93,7 @@ static void write_to_output_with_indent(string s)
 static string ClassName;
 static void print_class(ast t)
 {
+    // get some infomation from the class node
     ClassName = get_class_class_name(t);
     ast statics = get_class_statics(t);
     ast fields = get_class_fields(t);
@@ -100,6 +103,7 @@ static void print_class(ast t)
     int nfields = size_of_class_var_decs(fields);
     int nsubr = size_of_subr_decs(subr_decs);
 
+    // print class declaration
     write_to_output_with_indent("class " + ClassName + "\n");
     write_to_output_with_indent("{\n");
     IndentLevel++;
@@ -150,19 +154,19 @@ static void print_var_dec(ast t)
 
     switch (segment[0])
     {
-    case 'l': // local
+    case 'l':       // local
         write_to_output_with_indent("var " + type + " " + name + " ;\n");
         break;
-    case 's': // static
+    case 's':       // static
         write_to_output_with_indent("static " + type + " " + name + " ;\n");
         break;
-    case 't': // this
+    case 't':       // this
         write_to_output_with_indent("field " + type + " " + name + " ;\n");
         break;
-    case 'a': // argument
+    case 'a':       // argument
         write_to_output(type + " " + name);
         break;
-    default: // error
+    default:        // error
         write_to_output("/* unknown segment: " + segment + " */");
         break;
     }
@@ -670,6 +674,7 @@ static void print_this(ast t)
 //
 static void print_unary_op(ast t)
 {
+    // operator conversion tables
     static map<string, string> convert_map = {
         {"<", ">="},
         {">=", "<"},
@@ -680,14 +685,16 @@ static void print_unary_op(ast t)
         {"~=", "=="},
     };
 
+    // get nodes
     string uop = get_unary_op_op(t);
     ast term = get_unary_op_term(t);
     ast expr = get_term_term(term);
 
+    // to covert expr
     bool print_uop = true;
     if (uop == "~" && ast_have_kind(expr, ast_expr))
     {
-        if(size_of_expr(expr) == 3)
+        if (size_of_expr(expr) == 3)
         {
             string op = get_infix_op_op(get_expr(expr, 1));
             if (convert_map.find(op) != convert_map.end())
@@ -702,7 +709,8 @@ static void print_unary_op(ast t)
         }
     }
 
-    if(print_uop) write_to_output(uop);
+    if (print_uop)
+        write_to_output(uop);
     print_term(term);
 }
 
