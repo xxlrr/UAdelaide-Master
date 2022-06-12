@@ -1,12 +1,17 @@
 //
 //
-// Author: axxxxxxx
-// Name:   ... ...
+// Author: a1845302
+// Name:   Hongxing Hao
 //
 
+#include <map>
 #include "iobuffer.h"
 #include "symbols.h"
 #include "abstract-syntax-tree.h"
+
+#ifndef INDENT_SIZE
+#define INDENT_SIZE 2
+#endif
 
 // to shorten our code:
 using namespace std ;
@@ -69,22 +74,37 @@ static void print_subr_call(ast t) ;
 static void print_expr_list(ast t) ;
 static void print_infix_op(ast t) ;
 
+static int IndentLevel = 0 ;
+
+// write s to output buffer with proper indentation
+static void write_to_output_with_indent(string s) {
+    write_to_output(string(' ', IndentLevel * INDENT_SIZE) + s) ;
+}
+
 // walk an ast class node with fields:
 // class_name - a string
 // statics    - ast vector of variable declarations
 // fields     - ast vector of variable declarations
 // subr_decs  - ast vector of subroutine declarations
 //
+static string ClassName ;
 static void print_class(ast t)
 {
-    string myclassname = get_class_class_name(t) ;
+    ClassName = get_class_class_name(t) ;
     ast statics = get_class_statics(t) ;
     ast fields = get_class_fields(t) ;
     ast subr_decs = get_class_subr_decs(t) ;
 
+    write_to_output_with_indent("class " + ClassName + "\n") ;
+    write_to_output_with_indent("{\n") ;
+    IndentLevel++ ;
+
     print_class_var_decs(statics) ;
     print_class_var_decs(fields) ;
     print_subr_decs(subr_decs) ;
+
+    write_to_output_with_indent("}\n") ;
+    IndentLevel-- ;
 }
 
 // walk an ast class var decs node
@@ -108,10 +128,19 @@ static void print_class_var_decs(ast t)
 //
 static void print_var_dec(ast t)
 {
-    //string name = get_var_dec_name(t) ;
-    //string type = get_var_dec_type(t) ;
-    //string segment = get_var_dec_segment(t) ;
+    string name = get_var_dec_name(t) ;
+    string type = get_var_dec_type(t) ;
+    string segment = get_var_dec_segment(t) ;
     //int offset = get_var_dec_offset(t) ;
+
+    static map <string, string> segm_trans = {
+        {"local", "var "},
+        {"this", "field "},
+        {"static", "static "},
+        {"argument", ""},
+    } ;
+
+    write_to_output_with_indent(segm_trans[segment] + type + " " + name + ";\n") ;
 }
 
 // walk an ast class var decs node
@@ -120,6 +149,7 @@ static void print_var_dec(ast t)
 static void print_subr_decs(ast t)
 {
     int size = size_of_subr_decs(t) ;
+    if (size > 0) write_to_output("// public:\n") ;
     for ( int i = 0 ; i < size ; i++ )
     {
         print_subr(get_subr_decs(t,i)) ;
@@ -159,12 +189,21 @@ static void print_subr(ast t)
 static void print_constructor(ast t)
 {
     //string vtype = get_constructor_vtype(t) ;
-    //string name = get_constructor_name(t) ;
+    string name = get_constructor_name(t) ;
     ast param_list = get_constructor_param_list(t) ;
     ast subr_body = get_constructor_subr_body(t) ;
 
+    write_to_output_with_indent("constructor " + ClassName + " " + name + "(") ;
     print_param_list(param_list) ;
+    write_to_output(")\n") ;
+    
+    write_to_output_with_indent("{\n") ;
+    IndentLevel++ ;
+
     print_subr_body(subr_body) ;
+
+    write_to_output_with_indent("}\n") ;
+    IndentLevel-- ;
 }
 
 // walk an ast function node with fields
@@ -175,13 +214,22 @@ static void print_constructor(ast t)
 //
 static void print_function(ast t)
 {
-    //string vtype = get_function_vtype(t) ;
-    //string name = get_function_name(t) ;
+    string vtype = get_function_vtype(t) ;
+    string name = get_function_name(t) ;
     ast param_list = get_function_param_list(t) ;
     ast subr_body = get_function_subr_body(t) ;
 
+    write_to_output_with_indent("function " + " " + vtype + " " + name + "(") ;
     print_param_list(param_list) ;
+    write_to_output(")\n") ;
+
+    write_to_output_with_indent("{\n") ;
+    IndentLevel++ ;
+
     print_subr_body(subr_body) ;
+
+    write_to_output_with_indent("}\n") ;
+    IndentLevel-- ;
 }
 
 // walk an ast method node with fields
@@ -192,13 +240,22 @@ static void print_function(ast t)
 //
 static void print_method(ast t)
 {
-    //string vtype = get_method_vtype(t) ;
-    //string name = get_method_name(t) ;
+    string vtype = get_method_vtype(t) ;
+    string name = get_method_name(t) ;
     ast param_list = get_method_param_list(t) ;
     ast subr_body = get_method_subr_body(t) ;
 
+    write_to_output_with_indent("method " + " " + vtype + " " + name + "(") ;
     print_param_list(param_list) ;
+    write_to_output(")\n") ;
+
+    write_to_output_with_indent("{\n") ;
+    IndentLevel++ ;
+
     print_subr_body(subr_body) ;
+
+    write_to_output_with_indent("}\n") ;
+    IndentLevel-- ;
 }
 
 // walk an ast param list node
@@ -207,10 +264,12 @@ static void print_method(ast t)
 static void print_param_list(ast t)
 {
     int ndecs = size_of_param_list(t) ;
-    for ( int i = 0 ; i < ndecs ; i++ )
+    for (int i = 0; i < ndecs - 1; i++)
     {
-        print_var_dec(get_param_list(t,i)) ;
+        print_var_dec(get_param_list(t, i));
+        write_to_output(",");
     }
+    if (ndecs > 0) print_var_dec(get_param_list(t, ndecs - 1));
 }
 
 // walk an ast subr body node with fields
@@ -236,6 +295,7 @@ static void print_var_decs(ast t)
     {
         print_var_dec(get_var_decs(t,i)) ;
     }
+    if (ndecs > 0) write_to_output("\n") ;
 }
 
 // walk an ast statements node
