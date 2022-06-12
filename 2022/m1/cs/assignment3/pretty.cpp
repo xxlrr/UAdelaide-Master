@@ -700,7 +700,7 @@ static void print_call_as_function(ast t)
     string class_name = get_call_as_function_class_name(t) ;
     ast subr_call = get_call_as_function_subr_call(t) ;
 
-    write_to_output(ClassName + "::") ;
+    write_to_output(class_name + "::") ;
     print_subr_call(subr_call) ;
 }
 
