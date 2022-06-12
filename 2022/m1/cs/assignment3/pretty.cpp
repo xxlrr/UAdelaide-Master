@@ -670,10 +670,39 @@ static void print_this(ast t)
 //
 static void print_unary_op(ast t)
 {
-    // todo
-    // string uop = get_unary_op_op(t);
-    ast term = get_unary_op_term(t);
+    static map<string, string> convert_map = {
+        {"<", ">="},
+        {">=", "<"},
+        {">", "<="},
+        {"<=", ">"},
+        {"=", "~="},
+        {"==", "~="},
+        {"~=", "=="},
+    };
 
+    string uop = get_unary_op_op(t);
+    ast term = get_unary_op_term(t);
+    ast expr = get_term_term(term);
+
+    bool print_uop = true;
+    if (uop == "~" && ast_have_kind(expr, ast_expr))
+    {
+        if(size_of_expr(expr) == 3)
+        {
+            string op = get_infix_op_op(get_expr(expr, 1));
+            if (convert_map.find(op) != convert_map.end())
+            {
+                ast lterm = get_expr(expr, 0);
+                ast iop = create_infix_op(convert_map[op]);
+                ast rterm = get_expr(expr, 2);
+                term = create_term(create_expr(lterm, iop, rterm));
+
+                print_uop = false;
+            }
+        }
+    }
+
+    if(print_uop) write_to_output(uop);
     print_term(term);
 }
 
