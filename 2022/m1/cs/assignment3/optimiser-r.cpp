@@ -103,11 +103,12 @@ static eval_value evaluate_condition(ast cond)
         }
         else if (kind == ast_unary_op)
         {
-            string op = get_unary_op_op(expr);
-            ast term = get_unary_op_term(expr);
+            string uop = get_unary_op_op(expr);
+            ast uterm = get_unary_op_term(expr);
+            ast uexpr = get_term_term(uterm);
 
-            eval_value ev = evaluate_condition(term);
-            if (op == "~")
+            eval_value ev = evaluate_condition(uexpr);
+            if (uop == "~")
                 ev = (ev == cond_true ? cond_false : cond_true);
 
             return ev;
@@ -119,59 +120,54 @@ static eval_value evaluate_condition(ast cond)
         string op = get_infix_op_op(get_expr(cond, 1));
         ast ropd = get_term_term(get_expr(cond, 2));
 
-        eval_value evl = evaluate_condition(lopd);
-        eval_value evr = evaluate_condition(ropd);
+        ast_kind ltype = ast_node_kind(lopd);
+        ast_kind rtype = ast_node_kind(ropd);
 
-        if(evl != cond_unknow && evr != cond_unknow)
+        if(ltype == ast_int && rtype == ast_int)
         {
-            ast_kind ltype = ast_node_kind(lopd);
-            ast_kind rtype = ast_node_kind(ropd);
+            int lval = get_int_constant(lopd);
+            int rval = get_int_constant(ropd);
 
-            if(ltype == ast_int && rtype == ast_int)
+            switch (string_to_token_kind(op))
             {
-                int lval = get_int_constant(lopd);
-                int rval = get_int_constant(ropd);
-
-                switch (string_to_token_kind(op))
-                {
-                case tk_add:                 // '+',  tg_infix_op
-                    return lval + rval == 0 ? cond_false : cond_true;
-                case tk_sub:                 // '-',  tg_infix_op, tg_unary_op
-                    return lval - rval == 0 ? cond_false : cond_true;
-                case tk_times:               // '*',  tg_infix_op
-                    return lval * rval == 0 ? cond_false : cond_true;
-                case tk_divide:              // '/',  tg_infix_op
-                    return rval == 0 ? cond_unknow : (lval == 0 ? cond_false : cond_true);
-                case tk_lt:                  // '<',  tg_infix_op, tg_rel_op
-                    return lval < rval ? cond_true : cond_false;
-                case tk_le:                  // '<=', tg_infix_op, tg_rel_op
-                    return lval <= rval ? cond_true : cond_false;
-                case tk_gt:                  // '>',  tg_infix_op, tg_rel_op
-                    return lval > rval ? cond_true : cond_false;
-                case tk_ge:                  // '>=', tg_infix_op, tg_rel_op
-                    return lval >= rval ? cond_true : cond_false;
-                case tk_eq:                  // '==', tg_infix_op, tg_rel_op
-                    return lval == rval ? cond_true : cond_false;
-                case tk_ne:                  // '~=', tg_infix_op, tg_rel_op
-                    return lval != rval ? cond_true : cond_false;
-                default:
-                    break;
-                }
+            case tk_add:                 // '+',  tg_infix_op
+                return lval + rval == 0 ? cond_false : cond_true;
+            case tk_sub:                 // '-',  tg_infix_op, tg_unary_op
+                return lval - rval == 0 ? cond_false : cond_true;
+            case tk_times:               // '*',  tg_infix_op
+                return lval * rval == 0 ? cond_false : cond_true;
+            case tk_divide:              // '/',  tg_infix_op
+                return rval == 0 ? cond_unknow : (lval == 0 ? cond_false : cond_true);
+            case tk_lt:                  // '<',  tg_infix_op, tg_rel_op
+                return lval < rval ? cond_true : cond_false;
+            case tk_le:                  // '<=', tg_infix_op, tg_rel_op
+                return lval <= rval ? cond_true : cond_false;
+            case tk_gt:                  // '>',  tg_infix_op, tg_rel_op
+                return lval > rval ? cond_true : cond_false;
+            case tk_ge:                  // '>=', tg_infix_op, tg_rel_op
+                return lval >= rval ? cond_true : cond_false;
+            case tk_eq:                  // '==', tg_infix_op, tg_rel_op
+                return lval == rval ? cond_true : cond_false;
+            case tk_ne:                  // '~=', tg_infix_op, tg_rel_op
+                return lval != rval ? cond_true : cond_false;
+            default:
+                break;
             }
-            else if (ltype == ast_bool && rtype == ast_bool)
-            {
-                bool lval = get_bool_t_or_f(lopd);
-                bool rval = get_bool_t_or_f(lopd);
+        }
 
-                switch (string_to_token_kind(op))
-                {
-                case tk_eq:                  // '==', tg_infix_op, tg_rel_op
-                    return lval == rval ? cond_true : cond_false;
-                case tk_ne:                  // '~=', tg_infix_op, tg_rel_op
-                    return lval != rval ? cond_true : cond_false;
-                default:
-                    break;
-                }
+        else if (ltype == ast_bool && rtype == ast_bool)
+        {
+            bool lval = get_bool_t_or_f(lopd);
+            bool rval = get_bool_t_or_f(lopd);
+
+            switch (string_to_token_kind(op))
+            {
+            case tk_eq:                  // '==', tg_infix_op, tg_rel_op
+                return lval == rval ? cond_true : cond_false;
+            case tk_ne:                  // '~=', tg_infix_op, tg_rel_op
+                return lval != rval ? cond_true : cond_false;
+            default:
+                break;
             }
         }
     }
@@ -496,7 +492,7 @@ static ast prune_if(ast t)
     if(ev == cond_false)
         return nullptr;
 
-    if_true = prune_statement(if_true);
+    if_true = prune_statements(if_true);
     if (size_of_statements(if_true) == 0)
         return nullptr;
 
