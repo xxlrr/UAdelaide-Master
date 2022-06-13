@@ -9,10 +9,10 @@
 #include "abstract-syntax-tree.h"
 
 // to shorten our code:
-using namespace std ;
-using namespace CS_IO_Buffers ;
-using namespace CS_Symbol_Tables ;
-using namespace Jack_Compiler ;
+using namespace std;
+using namespace CS_IO_Buffers;
+using namespace CS_Symbol_Tables;
+using namespace Jack_Compiler;
 
 #pragma clang diagnostic ignored "-Wunused-function"
 
@@ -33,42 +33,221 @@ using namespace Jack_Compiler ;
 //  - you can change it as much as you like
 
 // forward declarations of one function per node in the abstract syntax tree
-static ast optimise_class(ast t) ;
-static ast optimise_class_var_decs(ast t) ;
-static ast optimise_var_dec(ast t) ;
-static ast optimise_subr_decs(ast t) ;
-static ast optimise_subr(ast t) ;
-static ast optimise_constructor(ast t) ;
-static ast optimise_function(ast t) ;
-static ast optimise_method(ast t) ;
-static ast optimise_param_list(ast t) ;
-static ast optimise_subr_body(ast t) ;
-static ast optimise_var_decs(ast t) ;
-static ast optimise_statements(ast t) ;
-static ast optimise_statement(ast t) ;
-static ast optimise_let(ast t) ;
-static ast optimise_let_array(ast t) ;
-static ast optimise_if(ast t) ;
-static ast optimise_if_else(ast t) ;
-static ast optimise_while(ast t) ;
-static ast optimise_do(ast t) ;
-static ast optimise_return(ast t) ;
-static ast optimise_return_expr(ast t) ;
-static ast optimise_expr(ast t) ;
-static ast optimise_term(ast t) ;
-static ast optimise_int(ast t) ;
-static ast optimise_string(ast t) ;
-static ast optimise_bool(ast t) ;
-static ast optimise_null(ast t) ;
-static ast optimise_this(ast t) ;
-static ast optimise_unary_op(ast t) ;
-static ast optimise_var(ast t) ;
-static ast optimise_array_index(ast t) ;
-static ast optimise_call_as_function(ast t) ;
-static ast optimise_call_as_method(ast t) ;
-static ast optimise_subr_call(ast t) ;
-static ast optimise_expr_list(ast t) ;
-static ast optimise_infix_op(ast t) ;
+static ast optimise_class(ast t);
+static ast optimise_class_var_decs(ast t);
+static ast optimise_var_dec(ast t);
+static ast optimise_subr_decs(ast t);
+static ast optimise_subr(ast t);
+static ast optimise_constructor(ast t);
+static ast optimise_function(ast t);
+static ast optimise_method(ast t);
+static ast optimise_param_list(ast t);
+static ast optimise_subr_body(ast t);
+static ast optimise_var_decs(ast t);
+static ast optimise_statements(ast t);
+static ast optimise_statement(ast t);
+static ast optimise_let(ast t);
+static ast optimise_let_array(ast t);
+static ast optimise_if(ast t);
+static ast optimise_if_else(ast t);
+static ast optimise_while(ast t);
+static ast optimise_do(ast t);
+static ast optimise_return(ast t);
+static ast optimise_return_expr(ast t);
+static ast optimise_expr(ast t);
+static ast optimise_term(ast t);
+static ast optimise_int(ast t);
+static ast optimise_string(ast t);
+static ast optimise_bool(ast t);
+static ast optimise_null(ast t);
+static ast optimise_this(ast t);
+static ast optimise_unary_op(ast t);
+static ast optimise_var(ast t);
+static ast optimise_array_index(ast t);
+static ast optimise_call_as_function(ast t);
+static ast optimise_call_as_method(ast t);
+static ast optimise_subr_call(ast t);
+static ast optimise_expr_list(ast t);
+static ast optimise_infix_op(ast t);
+static ast evaluate_expr(ast lhs, ast op, ast rhs);
+
+static ast evaluate_expr(ast lhs, ast op, ast rhs)
+{
+    ast lopd = get_term_term(lhs);
+    ast ropd = get_term_term(rhs);
+    string opr = get_infix_op_op(op);
+
+    ast_kind ltype = ast_node_kind(lopd);
+    ast_kind rtype = ast_node_kind(ropd);
+    TokenKind optype = string_to_token_kind(opr);
+
+    if (ltype == ast_int && rtype == ast_int)
+    {
+        int ilval = get_int_constant(lopd);
+        int irval = get_int_constant(ropd);
+        switch(optype)
+        {
+        case tk_add:                 // '+',  tg_infix_op
+            return create_int(ilval + irval);
+        case tk_sub:                 // '-',  tg_infix_op, tg_unary_op
+            return create_int(ilval - irval);
+        case tk_times:               // '*',  tg_infix_op
+            return create_int(ilval * irval);
+        case tk_divide:              // '/',  tg_infix_op
+            return irval != 0 ? create_int(ilval / irval) : nullptr ;
+        case tk_and:                 // '&',  tg_infix_op
+            return create_int(ilval & irval);
+        case tk_or:                  // '|',  tg_infix_op
+            return create_int(ilval | irval);
+        case tk_lt:                  // '<',  tg_infix_op, tg_rel_op
+            return create_bool(ilval < irval);
+        // case tk_le:                  // '<=', tg_infix_op, tg_rel_op
+        //     return create_bool(ilval <= irval);
+        case tk_gt:                  // '>',  tg_infix_op, tg_rel_op
+            return create_bool(ilval > irval);
+        // case tk_ge:                  // '>=', tg_infix_op, tg_rel_op
+        //     return create_bool(ilval >= irval);
+        case tk_eq:                  // '==', tg_infix_op, tg_rel_op
+            return create_bool(ilval == irval);
+        // case tk_ne:                  // '~=', tg_infix_op, tg_rel_op
+        //     return create_bool(ilval != irval);
+        default:
+            return nullptr;
+        }
+    }
+
+    else if (ltype == ast_int)
+    {
+        int ilval = get_int_constant(lopd);
+        switch(optype)
+        {
+        case tk_add:                 // '+',  tg_infix_op
+            return ilval == 0 ? rhs : nullptr;
+        case tk_times:               // '*',  tg_infix_op
+            if (ilval == 0 && rtype == ast_expr) return create_int(0);
+            else if (ilval == 1) return rhs;
+            else return nullptr;
+        case tk_and:
+            return ilval ? nullptr : create_bool(false);
+        case tk_or:
+            return ilval ? create_bool(true) : nullptr;
+        default:
+            return nullptr;
+        }
+    }
+
+    else if (rtype == ast_int)
+    {
+        int irval = get_int_constant(ropd);
+        switch(optype)
+        {
+        case tk_add:                 // '+',  tg_infix_op
+            return irval == 0 ? lhs : nullptr;
+        case tk_sub:                 // '-',  tg_infix_op, tg_unary_op
+            return irval == 0 ? lhs : nullptr;
+        case tk_times:               // '*',  tg_infix_op
+            if (irval == 0 && ltype == ast_expr) return create_int(0);
+            else if (irval == 1) return lhs;
+            else return nullptr;
+        case tk_and:
+            return irval ? nullptr : create_bool(false);
+        case tk_or:
+            return irval ? create_bool(true) : nullptr;
+        case tk_divide:              // '/',  tg_infix_op
+            return irval == 1 ? lhs : nullptr;
+        default:
+            return nullptr;
+        }
+    }
+
+    else if (ltype == ast_bool && rtype == ast_bool)
+    {
+        bool blval = get_bool_t_or_f(lopd);
+        bool brval = get_bool_t_or_f(ropd);
+        switch(optype)
+        {
+        case tk_and:                 // '&',  tg_infix_op
+            return create_bool(blval && brval);
+        case tk_or:                  // '|',  tg_infix_op
+            return create_bool(blval || brval);
+        case tk_eq:                  // '==', tg_infix_op, tg_rel_op
+            return create_bool(blval == brval);
+        // case tk_ne:                  // '~=', tg_infix_op, tg_rel_op
+        //     return create_bool(blval != brval);
+        default:
+            return nullptr;
+        }
+    }
+
+    else if (ltype == ast_bool && rtype == ast_expr)
+    {
+        bool blval = get_bool_t_or_f(lopd);
+        switch(optype)
+        {
+        // case tk_and:                 // '&',  tg_infix_op
+        //     return blval ? rhs : create_bool(false);
+        // case tk_or:                  // '|',  tg_infix_op
+        //     return blval ? create_bool(true) :rhs;
+        case tk_and:
+            return blval ? nullptr : create_bool(false);
+        case tk_or:
+            return blval ? create_bool(true) : nullptr;
+        default:
+            return nullptr;
+        }
+    }
+
+    else if (ltype == ast_expr && rtype == ast_bool)
+    {
+        bool brval = get_bool_t_or_f(ropd);
+        switch(optype)
+        {
+        // case tk_and:                 // '&',  tg_infix_op
+        //     return brval ? lhs : create_bool(false);
+        // case tk_or:                  // '|',  tg_infix_op
+        //     return brval ? create_bool(true) : lhs;
+        case tk_and:
+            return brval ? nullptr : create_bool(false);
+        case tk_or:
+            return brval ? create_bool(true) : nullptr;
+        default:
+            return nullptr;
+        }
+    }
+
+    else if (ltype == ast_var && rtype == ast_var)
+    {
+        string lsegm = get_var_segment(lopd);
+        string rsegm = get_var_segment(ropd);
+        string lname = get_var_name(lopd);
+        string rname = get_var_name(ropd);
+
+        if(lsegm == rsegm && lname == rname)
+        {
+            switch(optype)
+            {
+            case tk_sub:
+                return 0;
+            case tk_and:                 // '&',  tg_infix_op
+                return lhs;
+            case tk_or:                  // '|',  tg_infix_op
+                return lhs;
+            case tk_lt:                  // '<',  tg_infix_op, tg_rel_op
+            case tk_gt:                  // '>',  tg_infix_op, tg_rel_op
+            // case tk_ne:                  // '~=', tg_infix_op, tg_rel_op
+                return create_bool(false);
+            // case tk_le:                  // '<=', tg_infix_op, tg_rel_op
+            // case tk_ge:                  // '>=', tg_infix_op, tg_rel_op
+            case tk_eq:                  // '==', tg_infix_op, tg_rel_op
+                return create_bool(true);
+            default:
+                return nullptr;
+            }
+        }
+    }
+
+    return nullptr;
+}
 
 // copy an ast class node with fields:
 // class_name - a string
@@ -77,16 +256,16 @@ static ast optimise_infix_op(ast t) ;
 //
 static ast optimise_class(ast t)
 {
-    string myclassname = get_class_class_name(t) ;
-    ast statics = get_class_statics(t) ;
-    ast fields = get_class_fields(t) ;
-    ast subr_decs = get_class_subr_decs(t) ;
+    string myclassname = get_class_class_name(t);
+    ast statics = get_class_statics(t);
+    ast fields = get_class_fields(t);
+    ast subr_decs = get_class_subr_decs(t);
 
-    statics = optimise_class_var_decs(statics) ;
-    fields = optimise_class_var_decs(fields) ;
-    subr_decs = optimise_subr_decs(subr_decs) ;
+    statics = optimise_class_var_decs(statics);
+    fields = optimise_class_var_decs(fields);
+    subr_decs = optimise_subr_decs(subr_decs);
 
-    return create_class(get_ann(t),myclassname,statics,fields,subr_decs) ;
+    return create_class(get_ann(t), myclassname, statics, fields, subr_decs);
 }
 
 // copy an ast class var decs node
@@ -94,16 +273,16 @@ static ast optimise_class(ast t)
 //
 static ast optimise_class_var_decs(ast t)
 {
-    vector<ast> decs ;
+    vector<ast> decs;
 
-    int ndecs = size_of_class_var_decs(t) ;
-    for ( int i = 0 ; i < ndecs ; i++ )
+    int ndecs = size_of_class_var_decs(t);
+    for (int i = 0; i < ndecs; i++)
     {
-        ast deci = get_class_var_decs(t,i) ;
-        decs.push_back(optimise_var_dec(deci)) ;
+        ast deci = get_class_var_decs(t, i);
+        decs.push_back(optimise_var_dec(deci));
     }
 
-    return create_class_var_decs(get_ann(t),decs) ;
+    return create_class_var_decs(get_ann(t), decs);
 }
 
 // copy an ast variable declaration with fields
@@ -115,12 +294,12 @@ static ast optimise_class_var_decs(ast t)
 //
 static ast optimise_var_dec(ast t)
 {
-    //string name = get_var_dec_name(t) ;
-    //string type = get_var_dec_type(t) ;
-    //string segment = get_var_dec_segment(t) ;
-    //int offset = get_var_dec_offset(t) ;
+    // string name = get_var_dec_name(t) ;
+    // string type = get_var_dec_type(t) ;
+    // string segment = get_var_dec_segment(t) ;
+    // int offset = get_var_dec_offset(t) ;
 
-    return t ;
+    return t;
 }
 
 // copy an ast class var decs node
@@ -128,16 +307,16 @@ static ast optimise_var_dec(ast t)
 //
 static ast optimise_subr_decs(ast t)
 {
-    vector<ast> decs ;
+    vector<ast> decs;
 
-    int size = size_of_subr_decs(t) ;
-    for ( int i = 0 ; i < size ; i++ )
+    int size = size_of_subr_decs(t);
+    for (int i = 0; i < size; i++)
     {
-        ast deci = get_subr_decs(t,i) ;
-        decs.push_back(optimise_subr(deci)) ;
+        ast deci = get_subr_decs(t, i);
+        decs.push_back(optimise_subr(deci));
     }
 
-    return create_subr_decs(get_ann(t),decs) ;
+    return create_subr_decs(get_ann(t), decs);
 }
 
 // copy an ast subroutine node with a single field
@@ -145,25 +324,25 @@ static ast optimise_subr_decs(ast t)
 //
 static ast optimise_subr(ast t)
 {
-    ast subr = get_subr_subr(t) ;
+    ast subr = get_subr_subr(t);
 
-    switch(ast_node_kind(subr))
+    switch (ast_node_kind(subr))
     {
     case ast_constructor:
-        subr = optimise_constructor(subr) ;
-        break ;
+        subr = optimise_constructor(subr);
+        break;
     case ast_function:
-        subr = optimise_function(subr) ;
-        break ;
+        subr = optimise_function(subr);
+        break;
     case ast_method:
-        subr = optimise_method(subr) ;
-        break ;
+        subr = optimise_method(subr);
+        break;
     default:
-        fatal_error(0,"bad subroutine dec found") ;
-        break ;
+        fatal_error(0, "bad subroutine dec found");
+        break;
     }
 
-    return create_subr(get_ann(t),subr) ;
+    return create_subr(get_ann(t), subr);
 }
 
 // copy an ast constructor node with fields
@@ -174,15 +353,15 @@ static ast optimise_subr(ast t)
 //
 static ast optimise_constructor(ast t)
 {
-    string vtype = get_constructor_vtype(t) ;
-    string name = get_constructor_name(t) ;
-    ast param_list = get_constructor_param_list(t) ;
-    ast subr_body = get_constructor_subr_body(t) ;
+    string vtype = get_constructor_vtype(t);
+    string name = get_constructor_name(t);
+    ast param_list = get_constructor_param_list(t);
+    ast subr_body = get_constructor_subr_body(t);
 
-    param_list = optimise_param_list(param_list) ;
-    subr_body = optimise_subr_body(subr_body) ;
+    param_list = optimise_param_list(param_list);
+    subr_body = optimise_subr_body(subr_body);
 
-    return create_constructor(get_ann(t),vtype,name,param_list,subr_body) ;
+    return create_constructor(get_ann(t), vtype, name, param_list, subr_body);
 }
 
 // copy an ast function node with fields
@@ -193,15 +372,15 @@ static ast optimise_constructor(ast t)
 //
 static ast optimise_function(ast t)
 {
-    string vtype = get_function_vtype(t) ;
-    string name = get_function_name(t) ;
-    ast param_list = get_function_param_list(t) ;
-    ast subr_body = get_function_subr_body(t) ;
+    string vtype = get_function_vtype(t);
+    string name = get_function_name(t);
+    ast param_list = get_function_param_list(t);
+    ast subr_body = get_function_subr_body(t);
 
-    param_list = optimise_param_list(param_list) ;
-    subr_body = optimise_subr_body(subr_body) ;
+    param_list = optimise_param_list(param_list);
+    subr_body = optimise_subr_body(subr_body);
 
-    return create_function(get_ann(t),vtype,name,param_list,subr_body) ;
+    return create_function(get_ann(t), vtype, name, param_list, subr_body);
 }
 
 // copy an ast method node with fields
@@ -212,15 +391,15 @@ static ast optimise_function(ast t)
 //
 static ast optimise_method(ast t)
 {
-    string vtype = get_method_vtype(t) ;
-    string name = get_method_name(t) ;
-    ast param_list = get_method_param_list(t) ;
-    ast subr_body = get_method_subr_body(t) ;
+    string vtype = get_method_vtype(t);
+    string name = get_method_name(t);
+    ast param_list = get_method_param_list(t);
+    ast subr_body = get_method_subr_body(t);
 
-    param_list = optimise_param_list(param_list) ;
-    subr_body = optimise_subr_body(subr_body) ;
+    param_list = optimise_param_list(param_list);
+    subr_body = optimise_subr_body(subr_body);
 
-    return create_method(get_ann(t),vtype,name,param_list,subr_body) ;
+    return create_method(get_ann(t), vtype, name, param_list, subr_body);
 }
 
 // copy an ast param list node
@@ -228,16 +407,16 @@ static ast optimise_method(ast t)
 //
 static ast optimise_param_list(ast t)
 {
-    vector<ast> decs ;
+    vector<ast> decs;
 
-    int size = size_of_param_list(t) ;
-    for ( int i = 0 ; i < size ; i++ )
+    int size = size_of_param_list(t);
+    for (int i = 0; i < size; i++)
     {
-        ast deci = get_param_list(t,i) ;
-        decs.push_back(optimise_var_dec(deci)) ;
+        ast deci = get_param_list(t, i);
+        decs.push_back(optimise_var_dec(deci));
     }
 
-    return create_param_list(get_ann(t),decs) ;
+    return create_param_list(get_ann(t), decs);
 }
 
 // copy an ast subr body node with fields
@@ -246,13 +425,13 @@ static ast optimise_param_list(ast t)
 //
 static ast optimise_subr_body(ast t)
 {
-    ast decs = get_subr_body_decs(t) ;
-    ast body = get_subr_body_body(t) ;
+    ast decs = get_subr_body_decs(t);
+    ast body = get_subr_body_body(t);
 
-    decs = optimise_var_decs(decs) ;
-    body = optimise_statements(body) ;
+    decs = optimise_var_decs(decs);
+    body = optimise_statements(body);
 
-    return create_subr_body(get_ann(t),decs,body) ;
+    return create_subr_body(get_ann(t), decs, body);
 }
 
 // copy an ast param list node
@@ -260,16 +439,16 @@ static ast optimise_subr_body(ast t)
 //
 static ast optimise_var_decs(ast t)
 {
-    vector<ast> decs ;
+    vector<ast> decs;
 
-    int size = size_of_var_decs(t) ;
-    for ( int i = 0 ; i < size ; i++ )
+    int size = size_of_var_decs(t);
+    for (int i = 0; i < size; i++)
     {
-        ast deci = get_var_decs(t,i) ;
-        decs.push_back(optimise_var_dec(deci)) ;
+        ast deci = get_var_decs(t, i);
+        decs.push_back(optimise_var_dec(deci));
     }
 
-    return create_var_decs(get_ann(t),decs) ;
+    return create_var_decs(get_ann(t), decs);
 }
 
 // copy an ast statements node
@@ -277,16 +456,16 @@ static ast optimise_var_decs(ast t)
 //
 static ast optimise_statements(ast t)
 {
-    vector<ast> decs ;
+    vector<ast> decs;
 
-    int size = size_of_statements(t) ;
-    for ( int i = 0 ; i < size ; i++ )
+    int size = size_of_statements(t);
+    for (int i = 0; i < size; i++)
     {
-        ast deci = get_statements(t,i) ;
-        decs.push_back(optimise_statement(deci)) ;
+        ast deci = get_statements(t, i);
+        decs.push_back(optimise_statement(deci));
     }
 
-    return create_statements(get_ann(t),decs) ;
+    return create_statements(get_ann(t), decs);
 }
 
 // copy an ast statement node with a single field
@@ -294,43 +473,43 @@ static ast optimise_statements(ast t)
 //
 static ast optimise_statement(ast t)
 {
-    ast statement = get_statement_statement(t) ;
+    ast statement = get_statement_statement(t);
 
-    switch(ast_node_kind(statement))
+    switch (ast_node_kind(statement))
     {
     case ast_let:
-        statement = optimise_let(statement) ;
-        break ;
+        statement = optimise_let(statement);
+        break;
     case ast_let_array:
-        statement = optimise_let_array(statement) ;
-        break ;
+        statement = optimise_let_array(statement);
+        break;
     case ast_if:
-        statement = optimise_if(statement) ;
-        break ;
+        statement = optimise_if(statement);
+        break;
     case ast_if_else:
-        statement = optimise_if_else(statement) ;
-        break ;
+        statement = optimise_if_else(statement);
+        break;
     case ast_while:
-        statement = optimise_while(statement) ;
-        break ;
+        statement = optimise_while(statement);
+        break;
     case ast_do:
-        statement = optimise_do(statement) ;
-        break ;
+        statement = optimise_do(statement);
+        break;
     case ast_return:
-        statement = optimise_return(statement) ;
-        break ;
+        statement = optimise_return(statement);
+        break;
     case ast_return_expr:
-        statement = optimise_return_expr(statement) ;
-        break ;
+        statement = optimise_return_expr(statement);
+        break;
     case ast_statements:
-        statement = optimise_statements(statement) ;
-        break ;
+        statement = optimise_statements(statement);
+        break;
     default:
-        fatal_error(0,"Unexpected statement kind") ;
-        break ;
+        fatal_error(0, "Unexpected statement kind");
+        break;
     }
 
-    return create_statement(get_ann(t),statement) ;
+    return create_statement(get_ann(t), statement);
 }
 
 // copy an ast let node with fields
@@ -339,13 +518,13 @@ static ast optimise_statement(ast t)
 //
 static ast optimise_let(ast t)
 {
-    ast var = get_let_var(t) ;
-    ast expr = get_let_expr(t) ;
+    ast var = get_let_var(t);
+    ast expr = get_let_expr(t);
 
-    var = optimise_var(var) ;
-    expr = optimise_expr(expr) ;
+    var = optimise_var(var);
+    expr = optimise_expr(expr);
 
-    return create_let(get_ann(t),var,expr) ;
+    return create_let(get_ann(t), var, expr);
 }
 
 // copy an ast let array node with fields
@@ -355,15 +534,15 @@ static ast optimise_let(ast t)
 //
 static ast optimise_let_array(ast t)
 {
-    ast var = get_let_array_var(t) ;
-    ast index = get_let_array_index(t) ;
-    ast expr = get_let_array_expr(t) ;
+    ast var = get_let_array_var(t);
+    ast index = get_let_array_index(t);
+    ast expr = get_let_array_expr(t);
 
-    var = optimise_var(var) ;
-    index = optimise_expr(index) ;
-    expr = optimise_expr(expr) ;
+    var = optimise_var(var);
+    index = optimise_expr(index);
+    expr = optimise_expr(expr);
 
-    return create_let_array(get_ann(t),var,index,expr) ;
+    return create_let_array(get_ann(t), var, index, expr);
 }
 
 // copy an ast if node with fields
@@ -372,13 +551,13 @@ static ast optimise_let_array(ast t)
 //
 static ast optimise_if(ast t)
 {
-    ast condition = get_if_condition(t) ;
-    ast if_true = get_if_if_true(t) ;
+    ast condition = get_if_condition(t);
+    ast if_true = get_if_if_true(t);
 
-    condition = optimise_expr(condition) ;
-    if_true = optimise_statements(if_true) ;
+    condition = optimise_expr(condition);
+    if_true = optimise_statements(if_true);
 
-    return create_if(get_ann(t),condition,if_true) ;
+    return create_if(get_ann(t), condition, if_true);
 }
 
 // copy an ast if else node with fields
@@ -388,15 +567,15 @@ static ast optimise_if(ast t)
 //
 static ast optimise_if_else(ast t)
 {
-    ast condition = get_if_else_condition(t) ;
-    ast if_true = get_if_else_if_true(t) ;
-    ast if_false = get_if_else_if_false(t) ;
+    ast condition = get_if_else_condition(t);
+    ast if_true = get_if_else_if_true(t);
+    ast if_false = get_if_else_if_false(t);
 
-    condition = optimise_expr(condition) ;
-    if_true = optimise_statements(if_true) ;
-    if_false = optimise_statements(if_false) ;
+    condition = optimise_expr(condition);
+    if_true = optimise_statements(if_true);
+    if_false = optimise_statements(if_false);
 
-    return create_if_else(get_ann(t),condition,if_true,if_false) ;
+    return create_if_else(get_ann(t), condition, if_true, if_false);
 }
 
 // copy an ast while node with fields
@@ -405,13 +584,13 @@ static ast optimise_if_else(ast t)
 //
 static ast optimise_while(ast t)
 {
-    ast condition = get_while_condition(t) ;
-    ast body = get_while_body(t) ;
+    ast condition = get_while_condition(t);
+    ast body = get_while_body(t);
 
-    condition = optimise_expr(condition) ;
-    body = optimise_statements(body) ;
+    condition = optimise_expr(condition);
+    body = optimise_statements(body);
 
-    return create_while(get_ann(t),condition,body) ;
+    return create_while(get_ann(t), condition, body);
 }
 
 // copy an ast do node with a single field
@@ -419,22 +598,22 @@ static ast optimise_while(ast t)
 //
 static ast optimise_do(ast t)
 {
-    ast call = get_do_call(t) ;
+    ast call = get_do_call(t);
 
-    switch(ast_node_kind(call))
+    switch (ast_node_kind(call))
     {
     case ast_call_as_function:
-        call = optimise_call_as_function(call) ;
-        break ;
+        call = optimise_call_as_function(call);
+        break;
     case ast_call_as_method:
-        call = optimise_call_as_method(call) ;
-        break ;
+        call = optimise_call_as_method(call);
+        break;
     default:
-        fatal_error(0,"Unexpected call kind\n") ;
-        break ;
+        fatal_error(0, "Unexpected call kind\n");
+        break;
     }
 
-    return create_do(get_ann(t),call) ;
+    return create_do(get_ann(t), call);
 }
 
 // copy an ast return node, it has not fields
@@ -442,7 +621,7 @@ static ast optimise_do(ast t)
 //
 static ast optimise_return(ast t)
 {
-    return t ;
+    return t;
 }
 
 // copy an ast return expr node with a single field
@@ -450,11 +629,11 @@ static ast optimise_return(ast t)
 //
 static ast optimise_return_expr(ast t)
 {
-    ast expr = get_return_expr(t) ;
+    ast expr = get_return_expr(t);
 
-    expr = optimise_expr(expr) ;
+    expr = optimise_expr(expr);
 
-    return create_return_expr(get_ann(t),expr) ;
+    return create_return_expr(get_ann(t), expr);
 }
 
 // copy an ast param list node
@@ -465,7 +644,7 @@ static ast optimise_return_expr(ast t)
 //
 static ast optimise_expr(ast t)
 {
-    vector<ast> terms ;
+    vector<ast> terms;
 
     int size = size_of_expr(t) ;
     for ( int i = 0 ; i < size ; i++ )
@@ -474,8 +653,18 @@ static ast optimise_expr(ast t)
         termop = i % 2 == 0 ? optimise_term(termop) : optimise_infix_op(termop) ;
         terms.push_back(termop) ;
     }
+    
+    if (terms.size() == 3)
+    {
+        ast t = evaluate_expr(terms.at(0), terms.at(1), terms.at(2));
+        if (t != nullptr)
+        {
+            terms.clear();
+            terms.push_back(create_term(t));
+        }
+    }
 
-    return create_expr(get_ann(t),terms) ;
+    return create_expr(get_ann(t), terms);
 }
 
 // copy an ast term node with a single field
@@ -485,49 +674,51 @@ static ast optimise_expr(ast t)
 //
 static ast optimise_term(ast t)
 {
-    ast term = get_term_term(t) ;
+    ast term = get_term_term(t);
 
-    switch(ast_node_kind(term))
+    switch (ast_node_kind(term))
     {
     case ast_int:
-        term = optimise_int(term) ;
-        break ;
+        term = optimise_int(term);
+        break;
     case ast_string:
-        term = optimise_string(term) ;
-        break ;
+        term = optimise_string(term);
+        break;
     case ast_bool:
-        term = optimise_bool(term) ;
-        break ;
+        term = optimise_bool(term);
+        break;
     case ast_null:
-        term = optimise_null(term) ;
-        break ;
+        term = optimise_null(term);
+        break;
     case ast_this:
-        term = optimise_this(term) ;
-        break ;
+        term = optimise_this(term);
+        break;
     case ast_expr:
-        term = optimise_expr(term) ;
-        break ;
+        term = optimise_expr(term);
+        if (size_of_expr(term) == 1)
+            term = get_term_term(get_expr(term, 0));
+        break;
     case ast_unary_op:
-        term = optimise_unary_op(term) ;
-        break ;
+        term = optimise_unary_op(term);
+        break;
     case ast_var:
-        term = optimise_var(term) ;
-        break ;
+        term = optimise_var(term);
+        break;
     case ast_array_index:
-        term = optimise_array_index(term) ;
-        break ;
+        term = optimise_array_index(term);
+        break;
     case ast_call_as_function:
-        term = optimise_call_as_function(term) ;
-        break ;
+        term = optimise_call_as_function(term);
+        break;
     case ast_call_as_method:
-        term = optimise_call_as_method(term) ;
-        break ;
+        term = optimise_call_as_method(term);
+        break;
     default:
-        fatal_error(0,"Unexpected term kind\n") ;
-        break ;
+        fatal_error(0, "Unexpected term kind\n");
+        break;
     }
-    
-    return create_term(get_ann(t),term) ;
+
+    return create_term(get_ann(t), term);
 }
 
 // copy an ast int node with a single field
@@ -535,9 +726,9 @@ static ast optimise_term(ast t)
 //
 static ast optimise_int(ast t)
 {
-    //int _constant = get_int_constant(t) ;
+    // int _constant = get_int_constant(t) ;
 
-    return t ;
+    return t;
 }
 
 // copy an ast string node with a single field
@@ -545,9 +736,9 @@ static ast optimise_int(ast t)
 //
 static ast optimise_string(ast t)
 {
-    //string _constant = get_string_constant(t) ;
+    // string _constant = get_string_constant(t) ;
 
-    return t ;
+    return t;
 }
 
 // copy an ast bool node with a single field
@@ -555,9 +746,9 @@ static ast optimise_string(ast t)
 //
 static ast optimise_bool(ast t)
 {
-    //bool _constant = get_bool_t_or_f(t) ;
+    // bool _constant = get_bool_t_or_f(t) ;
 
-    return t ;
+    return t;
 }
 
 // copy an ast null node, it has not fields
@@ -565,7 +756,7 @@ static ast optimise_bool(ast t)
 //
 static ast optimise_null(ast t)
 {
-    return t ;
+    return t;
 }
 
 // copy an ast this node, it has not fields
@@ -573,7 +764,7 @@ static ast optimise_null(ast t)
 //
 static ast optimise_this(ast t)
 {
-    return t ;
+    return t;
 }
 
 // copy an ast unary op node with fields
@@ -585,11 +776,11 @@ static ast optimise_this(ast t)
 static ast optimise_unary_op(ast t)
 {
     string uop = get_unary_op_op(t);
-    ast term = get_unary_op_term(t) ;
+    ast term = get_unary_op_term(t);
 
-    term = optimise_term(term) ;
+    term = optimise_term(term);
 
-    return create_unary_op(get_ann(t),uop,term) ;
+    return create_unary_op(get_ann(t), uop, term);
 }
 
 // copy an ast variable node with fields
@@ -600,12 +791,12 @@ static ast optimise_unary_op(ast t)
 //
 static ast optimise_var(ast t)
 {
-    //string name = get_var_name(t) ;
-    //string type = get_var_type(t) ;
-    //string segment = get_var_segment(t) ;
-    //int offset = get_var_offset(t) ;
+    // string name = get_var_name(t) ;
+    // string type = get_var_type(t) ;
+    // string segment = get_var_segment(t) ;
+    // int offset = get_var_offset(t) ;
 
-    return t ;
+    return t;
 }
 
 // copy an ast array index node with fields
@@ -614,13 +805,13 @@ static ast optimise_var(ast t)
 //
 static ast optimise_array_index(ast t)
 {
-    ast var = get_array_index_var(t) ;
-    ast index = get_array_index_index(t) ;
+    ast var = get_array_index_var(t);
+    ast index = get_array_index_index(t);
 
-    var = optimise_var(var) ;
-    index = optimise_expr(index) ;
+    var = optimise_var(var);
+    index = optimise_expr(index);
 
-    return create_array_index(get_ann(t),var,index) ;
+    return create_array_index(get_ann(t), var, index);
 }
 
 // copy an ast subr call as method with fields
@@ -629,12 +820,12 @@ static ast optimise_array_index(ast t)
 //
 static ast optimise_call_as_function(ast t)
 {
-    string class_name = get_call_as_function_class_name(t) ;
-    ast subr_call = get_call_as_function_subr_call(t) ;
+    string class_name = get_call_as_function_class_name(t);
+    ast subr_call = get_call_as_function_subr_call(t);
 
-    subr_call = optimise_subr_call(subr_call) ;
+    subr_call = optimise_subr_call(subr_call);
 
-    return create_call_as_function(get_ann(t),class_name,subr_call) ;
+    return create_call_as_function(get_ann(t), class_name, subr_call);
 }
 
 // copy an ast subr call as method with fields
@@ -644,14 +835,14 @@ static ast optimise_call_as_function(ast t)
 //
 static ast optimise_call_as_method(ast t)
 {
-    string class_name = get_call_as_method_class_name(t) ;
-    ast var = get_call_as_method_var(t) ;
-    ast subr_call = get_call_as_method_subr_call(t) ;
+    string class_name = get_call_as_method_class_name(t);
+    ast var = get_call_as_method_var(t);
+    ast subr_call = get_call_as_method_subr_call(t);
 
-    var = ast_node_kind(var) == ast_var ? optimise_var(var) : optimise_this(var) ;
-    subr_call = optimise_subr_call(subr_call) ;
+    var = ast_node_kind(var) == ast_var ? optimise_var(var) : optimise_this(var);
+    subr_call = optimise_subr_call(subr_call);
 
-    return create_call_as_method(get_ann(t),class_name,var,subr_call) ;
+    return create_call_as_method(get_ann(t), class_name, var, subr_call);
 }
 
 // copy an ast subr call node with fields
@@ -660,12 +851,12 @@ static ast optimise_call_as_method(ast t)
 //
 static ast optimise_subr_call(ast t)
 {
-    string subr_name = get_subr_call_subr_name(t) ;
-    ast expr_list = get_subr_call_expr_list(t) ;
+    string subr_name = get_subr_call_subr_name(t);
+    ast expr_list = get_subr_call_expr_list(t);
 
-    expr_list = optimise_expr_list(expr_list) ;
+    expr_list = optimise_expr_list(expr_list);
 
-    return create_subr_call(get_ann(t),subr_name,expr_list) ;
+    return create_subr_call(get_ann(t), subr_name, expr_list);
 }
 
 // copy an ast expr list node
@@ -673,16 +864,16 @@ static ast optimise_subr_call(ast t)
 //
 static ast optimise_expr_list(ast t)
 {
-    vector<ast> exprs ;
+    vector<ast> exprs;
 
-    int size = size_of_expr_list(t) ;
-    for ( int i = 0 ; i < size ; i++ )
+    int size = size_of_expr_list(t);
+    for (int i = 0; i < size; i++)
     {
-        ast expri = get_expr_list(t,i) ;
-        exprs.push_back(optimise_expr(expri)) ;
+        ast expri = get_expr_list(t, i);
+        exprs.push_back(optimise_expr(expri));
     }
 
-    return create_expr_list(get_ann(t),exprs) ;
+    return create_expr_list(get_ann(t), exprs);
 }
 
 // copy an ast infix op node with a single field
@@ -690,19 +881,18 @@ static ast optimise_expr_list(ast t)
 //
 static ast optimise_infix_op(ast t)
 {
-    //string op = get_infix_op_op(t) ;
+    // string op = get_infix_op_op(t) ;
 
-    return t ;
+    return t;
 }
 
 // main program
-int main(int argc,char **argv)
+int main(int argc, char **argv)
 {
     // walk an AST in XML and print VM code
-    ast_print_as_xml(optimise_class(ast_parse_xml()),3) ;
+    ast_print_as_xml(optimise_class(ast_parse_xml()), 3);
 
     // flush the output and any errors
-    print_output() ;
-    print_errors() ;
+    print_output();
+    print_errors();
 }
-
