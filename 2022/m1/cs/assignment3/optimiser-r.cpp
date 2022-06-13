@@ -109,7 +109,7 @@ static eval_value evaluate_condition(ast cond)
             ast uexpr = get_term_term(uterm);
 
             eval_value ev = evaluate_condition(uexpr);
-            if (uop == "~")
+            if (ev != cond_unknow && uop == "~")
                 ev = (ev == cond_true ? cond_false : cond_true);
 
             return ev;
@@ -513,11 +513,9 @@ static ast prune_if(ast t)
         return nullptr;
 
     if_true = prune_statements(if_true);
-    if (size_of_statements(if_true) == 0)
-        return nullptr;
 
     if (ev == cond_true)
-        return if_true;
+        return size_of_statements(if_true) != 0 ? if_true : nullptr;
 
     return create_if(get_ann(t), condition, if_true);
 }
@@ -539,20 +537,16 @@ static ast prune_if_else(ast t)
     int t_size = size_of_statements(if_true);
     int f_size = size_of_statements(if_false);
 
-    // body is empty
-    if (t_size == 0 && f_size == 0)
-        return nullptr;
-
     condition = prune_expr(condition);
     eval_value ev = evaluate_condition(condition);
 
     // the condition is always true
     if(ev == cond_true)
-        return if_true;
+        return t_size != 0 ? if_true : nullptr;
 
     // the condition is always true
     if(ev == cond_false)
-        return if_false;
+        return f_size != 0 ? if_true : nullptr;
 
     // equivalent to return? 
     if (t_size != 0 && f_size != 0)
@@ -591,10 +585,6 @@ static ast prune_while(ast t)
     {
         int size = size_of_statements(body);
 
-        // // invalid while but it didn't pass the test
-        // if (size == 0)
-        //     return nullptr;
-
         // equivalent to return?
         if (size > 0)
         {
@@ -607,7 +597,7 @@ static ast prune_while(ast t)
             }
         }
     }
-    
+
     return create_while(get_ann(t), condition, body);
 }
 
