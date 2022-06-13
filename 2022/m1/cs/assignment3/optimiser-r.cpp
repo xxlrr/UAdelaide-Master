@@ -4,6 +4,7 @@
 // Name:   Hongxing Hao
 //
 
+#include <set>
 #include "iobuffer.h"
 #include "symbols.h"
 #include "abstract-syntax-tree.h"
@@ -72,8 +73,8 @@ static ast prune_expr_list(ast t);
 static ast prune_infix_op(ast t);
 static int evaluate_expr(ast t);
 
-static vector<string> used_static_vars;
-static vector<string> used_local_vars;
+static set<string> used_static_vars;
+static set<string> used_local_vars;
 
 // condation value
 enum eval_value {
@@ -204,8 +205,11 @@ static ast prune_class_var_decs(ast t)
     int ndecs = size_of_class_var_decs(t);
     for (int i = 0; i < ndecs; i++)
     {
-        // todo: delete useless static vars
         ast deci = get_class_var_decs(t, i);
+        string segm = get_var_dec_segment(deci);
+        string name = get_var_dec_name(deci);
+        if (segm == "static" && used_static_vars.count(name) == 0)
+            continue;
         decs.push_back(prune_var_dec(deci));
     }
 
@@ -352,6 +356,8 @@ static ast prune_param_list(ast t)
 //
 static ast prune_subr_body(ast t)
 {
+    used_local_vars.clear();
+
     ast decs = get_subr_body_decs(t);
     ast body = get_subr_body_body(t);
 
@@ -371,8 +377,11 @@ static ast prune_var_decs(ast t)
     int size = size_of_var_decs(t);
     for (int i = 0; i < size; i++)
     {
-        // todo: delete useless local vars
         ast deci = get_var_decs(t, i);
+        string name = get_var_dec_name(deci);
+        string segm = get_var_dec_segment(deci);
+        if (segm == "local" && used_local_vars.count(name) == 0)
+            continue;
         decs.push_back(prune_var_dec(deci));
     }
 
@@ -580,21 +589,25 @@ static ast prune_while(ast t)
     body = prune_statements(body);
     if (ev == cond_true)
     {
-        // invalid while
         int size = size_of_statements(body);
-        if (size == 0)
-            return nullptr;
+
+        // // invalid while but it didn't pass the test
+        // if (size == 0)
+        //     return nullptr;
 
         // equivalent to return?
-        ast last = get_statements(body, size - 1);
-        ast_kind kind = ast_node_kind(last);
-        if (kind == ast_return || kind == ast_return_expr)
+        if (size > 0)
         {
-            stop_prune_statements = true;
-            return body;
+            ast last = get_statements(body, size - 1);
+            ast_kind kind = ast_node_kind(last);
+            if (kind == ast_return || kind == ast_return_expr)
+            {
+                stop_prune_statements = true;
+                return body;
+            }
         }
     }
-
+    
     return create_while(get_ann(t), condition, body);
 }
 
@@ -784,10 +797,16 @@ static ast prune_unary_op(ast t)
 //
 static ast prune_var(ast t)
 {
-    // string name = get_var_name(t) ;
+    string segment = get_var_segment(t) ;
+    string name = get_var_name(t) ;
     // string type = get_var_type(t) ;
-    // string segment = get_var_segment(t) ;
     // int offset = get_var_offset(t) ;
+
+    if (segment == "static")
+        used_static_vars.insert(name);
+
+    else if (segment == "local")
+        used_local_vars.insert(name);
 
     return t;
 }
