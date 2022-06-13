@@ -7,6 +7,7 @@
 #include "iobuffer.h"
 #include "symbols.h"
 #include "abstract-syntax-tree.h"
+#include "tokeniser.h"
 
 // to shorten our code:
 using namespace std;
@@ -69,14 +70,113 @@ static ast prune_call_as_method(ast t);
 static ast prune_subr_call(ast t);
 static ast prune_expr_list(ast t);
 static ast prune_infix_op(ast t);
+static int evaluate_expr(ast t);
 
 static vector<string> used_static_vars;
 static vector<string> used_local_vars;
 
-static ast evaluete_expr(ast lhs, ast rhs, ast op)
-{
+// condation value
+enum eval_value {
+    cond_unknow,
+    cond_true,
+    cond_false,
+};
 
-    return nullptr;
+// evaluate the expression
+// the cond is a expression
+static eval_value evaluate_condition(ast cond)
+{
+    int size = size_of_expr(cond);
+
+    if (size == 1)
+    {
+        ast expr = get_term_term(get_expr(cond, 0));
+        ast_kind kind = ast_node_kind(expr);
+
+        if (kind == ast_bool)
+        {
+            return get_bool_t_or_f(expr) ? cond_true : cond_false;
+        }
+        else if (kind == ast_int)
+        {
+            return get_int_constant(expr) != 0 ? cond_true : cond_false;
+        }
+        else if (kind == ast_unary_op)
+        {
+            string op = get_unary_op_op(expr);
+            ast term = get_unary_op_term(expr);
+
+            eval_value ev = evaluate_condition(term);
+            if (op == "~")
+                ev = (ev == cond_true ? cond_false : cond_true);
+
+            return ev;
+        }
+    }
+    else if (size == 3)
+    {
+        ast lopd = get_term_term(get_expr(cond, 0));
+        string op = get_infix_op_op(get_expr(cond, 1));
+        ast ropd = get_term_term(get_expr(cond, 2));
+
+        eval_value evl = evaluate_condition(lopd);
+        eval_value evr = evaluate_condition(ropd);
+
+        if(evl != cond_unknow && evr != cond_unknow)
+        {
+            ast_kind ltype = ast_node_kind(lopd);
+            ast_kind rtype = ast_node_kind(ropd);
+
+            if(ltype == ast_int && rtype == ast_int)
+            {
+                int lval = get_int_constant(lopd);
+                int rval = get_int_constant(ropd);
+
+                switch (string_to_token_kind(op))
+                {
+                case tk_add:                 // '+',  tg_infix_op
+                    return lval + rval == 0 ? cond_false : cond_true;
+                case tk_sub:                 // '-',  tg_infix_op, tg_unary_op
+                    return lval - rval == 0 ? cond_false : cond_true;
+                case tk_times:               // '*',  tg_infix_op
+                    return lval * rval == 0 ? cond_false : cond_true;
+                case tk_divide:              // '/',  tg_infix_op
+                    return rval == 0 ? cond_unknow : (lval == 0 ? cond_false : cond_true);
+                case tk_lt:                  // '<',  tg_infix_op, tg_rel_op
+                    return lval < rval ? cond_true : cond_false;
+                case tk_le:                  // '<=', tg_infix_op, tg_rel_op
+                    return lval <= rval ? cond_true : cond_false;
+                case tk_gt:                  // '>',  tg_infix_op, tg_rel_op
+                    return lval > rval ? cond_true : cond_false;
+                case tk_ge:                  // '>=', tg_infix_op, tg_rel_op
+                    return lval >= rval ? cond_true : cond_false;
+                case tk_eq:                  // '==', tg_infix_op, tg_rel_op
+                    return lval == rval ? cond_true : cond_false;
+                case tk_ne:                  // '~=', tg_infix_op, tg_rel_op
+                    return lval != rval ? cond_true : cond_false;
+                default:
+                    break;
+                }
+            }
+            else if (ltype == ast_bool && rtype == ast_bool)
+            {
+                bool lval = get_bool_t_or_f(lopd);
+                bool rval = get_bool_t_or_f(lopd);
+
+                switch (string_to_token_kind(op))
+                {
+                case tk_eq:                  // '==', tg_infix_op, tg_rel_op
+                    return lval == rval ? cond_true : cond_false;
+                case tk_ne:                  // '~=', tg_infix_op, tg_rel_op
+                    return lval != rval ? cond_true : cond_false;
+                default:
+                    break;
+                }
+            }
+        }
+    }
+
+    return cond_unknow;
 }
 
 // copy an ast class node with fields:
@@ -294,7 +394,9 @@ static ast prune_statements(ast t)
     for (int i = 0; i < size; i++)
     {
         ast deci = get_statements(t, i);
-        decs.push_back(prune_statement(deci));
+        deci = prune_statement(deci);
+        if (deci != nullptr)
+            decs.push_back(deci);
     }
 
     return create_statements(get_ann(t), decs);
@@ -341,6 +443,8 @@ static ast prune_statement(ast t)
         break;
     }
 
+    if (statement == nullptr)
+        return nullptr;
     return create_statement(get_ann(t), statement);
 }
 
@@ -387,7 +491,17 @@ static ast prune_if(ast t)
     ast if_true = get_if_if_true(t);
 
     condition = prune_expr(condition);
-    if_true = prune_statements(if_true);
+    eval_value ev = evaluate_condition(condition);
+
+    if(ev == cond_false)
+        return create_empty();
+
+    if_true = prune_statement(if_true);
+    if (size_of_statements(if_true) == 0)
+        return create_empty();
+
+    if (ev == cond_true)
+        return if_true;
 
     return create_if(get_ann(t), condition, if_true);
 }
@@ -420,7 +534,14 @@ static ast prune_while(ast t)
     ast body = get_while_body(t);
 
     condition = prune_expr(condition);
+    eval_value ev = evaluate_condition(condition);
+
+    if(ev == cond_false)
+        return nullptr;
+
     body = prune_statements(body);
+    // if (size_of_statements(body) == 0)
+    //     return nullptr;
 
     return create_while(get_ann(t), condition, body);
 }
@@ -477,27 +598,13 @@ static ast prune_return_expr(ast t)
 static ast prune_expr(ast t)
 {
     vector<ast> terms;
-    int size = size_of_expr(t);
-    
-    terms.push_back(prune_term(get_expr(t, 0)));
-    for (int i = 1; i < size; i=i+2)
-    {
-        ast op = prune_infix_op(get_expr(t, i));
-        ast lterm = terms.back();
-        ast rterm = prune_term(get_expr(t, i));
 
-        // evaluate
-        ast pruned = evaluete_expr(lterm, op, rterm);
-        if (pruned != nullptr)
-        {
-            terms.pop_back();
-            terms.push_back(pruned);
-        }
-        else
-        {
-            terms.push_back(op);
-            terms.push_back(rterm);
-        }
+    int size = size_of_expr(t);
+    for (int i = 0; i < size; i++)
+    {
+        ast termop = get_expr(t, i);
+        termop = i % 2 == 0 ? prune_term(termop) : prune_infix_op(termop);
+        terms.push_back(termop);
     }
 
     return create_expr(get_ann(t), terms);
