@@ -76,104 +76,103 @@ static int evaluate_expr(ast t);
 static set<string> used_static_vars;
 static set<string> used_local_vars;
 
-// condation value
-enum eval_value {
-    cond_unknow,
-    cond_true,
-    cond_false,
-};
-
 // evaluate the expression
 // the cond is a expression
-static eval_value evaluate_condition(ast cond)
+static bool valid_evaluate = true;
+static int evaluate_condition(ast cond)
 {
-    int size = size_of_expr(cond);
+    valid_evaluate = true;
+    if (!ast_have_kind(cond, ast_expr))
+    {
+        valid_evaluate = false;
+        return 0;
+    }
 
+    int size = size_of_expr(cond);
     if (size == 1)
     {
         ast expr = get_term_term(get_expr(cond, 0));
         ast_kind kind = ast_node_kind(expr);
 
-        if (kind == ast_bool)
+        switch (kind)
         {
-            return get_bool_t_or_f(expr) ? cond_true : cond_false;
-        }
-        else if (kind == ast_int)
+        case ast_bool:
+            return get_bool_t_or_f(expr) ? 1 : 0;
+        case ast_int:
+            return get_int_constant(expr);
+        case ast_unary_op:
         {
-            return get_int_constant(expr) != 0 ? cond_true : cond_false;
-        }
-        else if (kind == ast_unary_op)
-        {
-            string uop = get_unary_op_op(expr);
+            string op = get_unary_op_op(expr);
             ast uterm = get_unary_op_term(expr);
             ast uexpr = get_term_term(uterm);
 
-            eval_value ev = evaluate_condition(uexpr);
-            if (ev != cond_unknow && uop == "~")
-                ev = (ev == cond_true ? cond_false : cond_true);
+            int ev = evaluate_condition(uexpr);
+            if (!valid_evaluate)
+                return 0;
 
-            return ev;
+            if (op == "~")
+                return ~ev;
+            else if (op == "-")
+                return -ev;
+        }
+        default:
+            valid_evaluate = false;
+            return 0;
         }
     }
+
     else if (size == 3)
     {
         ast lopd = get_term_term(get_expr(cond, 0));
         string op = get_infix_op_op(get_expr(cond, 1));
         ast ropd = get_term_term(get_expr(cond, 2));
 
-        ast_kind ltype = ast_node_kind(lopd);
-        ast_kind rtype = ast_node_kind(ropd);
+        int lval = evaluate_condition(lopd);
+        if (!valid_evaluate)
+            return 0;
 
-        if(ltype == ast_int && rtype == ast_int)
+        int rval = evaluate_condition(ropd);
+        if (!valid_evaluate)
+            return 0;
+
+        switch (string_to_token_kind(op))
         {
-            int lval = get_int_constant(lopd);
-            int rval = get_int_constant(ropd);
-
-            switch (string_to_token_kind(op))
+        case tk_add: // '+',  tg_infix_op
+            return lval + rval;
+        case tk_sub: // '-',  tg_infix_op, tg_unary_op
+            return lval - rval;
+        case tk_times: // '*',  tg_infix_op
+            return lval * rval;
+        case tk_divide: // '/',  tg_infix_op
+            if (rval == 0)
             {
-            case tk_add:                 // '+',  tg_infix_op
-                return lval + rval == 0 ? cond_false : cond_true;
-            case tk_sub:                 // '-',  tg_infix_op, tg_unary_op
-                return lval - rval == 0 ? cond_false : cond_true;
-            case tk_times:               // '*',  tg_infix_op
-                return lval * rval == 0 ? cond_false : cond_true;
-            case tk_divide:              // '/',  tg_infix_op
-                return rval == 0 ? cond_unknow : (lval == 0 ? cond_false : cond_true);
-            case tk_lt:                  // '<',  tg_infix_op, tg_rel_op
-                return lval < rval ? cond_true : cond_false;
-            case tk_le:                  // '<=', tg_infix_op, tg_rel_op
-                return lval <= rval ? cond_true : cond_false;
-            case tk_gt:                  // '>',  tg_infix_op, tg_rel_op
-                return lval > rval ? cond_true : cond_false;
-            case tk_ge:                  // '>=', tg_infix_op, tg_rel_op
-                return lval >= rval ? cond_true : cond_false;
-            case tk_eq:                  // '==', tg_infix_op, tg_rel_op
-                return lval == rval ? cond_true : cond_false;
-            case tk_ne:                  // '~=', tg_infix_op, tg_rel_op
-                return lval != rval ? cond_true : cond_false;
-            default:
-                break;
+                valid_evaluate = false;
+                return 0;
             }
-        }
-
-        else if (ltype == ast_bool && rtype == ast_bool)
-        {
-            bool lval = get_bool_t_or_f(lopd);
-            bool rval = get_bool_t_or_f(lopd);
-
-            switch (string_to_token_kind(op))
-            {
-            case tk_eq:                  // '==', tg_infix_op, tg_rel_op
-                return lval == rval ? cond_true : cond_false;
-            case tk_ne:                  // '~=', tg_infix_op, tg_rel_op
-                return lval != rval ? cond_true : cond_false;
-            default:
-                break;
-            }
+            return lval / rval;
+        case tk_lt: // '<',  tg_infix_op, tg_rel_op
+            return lval < rval;
+        case tk_le: // '<=', tg_infix_op, tg_rel_op
+            return lval <= rval;
+        case tk_gt: // '>',  tg_infix_op, tg_rel_op
+            return lval > rval;
+        case tk_ge: // '>=', tg_infix_op, tg_rel_op
+            return lval >= rval;
+        case tk_eq: // '==', tg_infix_op, tg_rel_op
+            return lval == rval;
+        case tk_ne: // '~=', tg_infix_op, tg_rel_op
+            return lval != rval;
+        default:
+            valid_evaluate = false;
+            return 0;
         }
     }
 
-    return cond_unknow;
+    else
+    {
+        valid_evaluate = false;
+        return 0;
+    }
 }
 
 // copy an ast class node with fields:
@@ -183,6 +182,8 @@ static eval_value evaluate_condition(ast cond)
 //
 static ast prune_class(ast t)
 {
+    used_static_vars.clear();
+
     string myclassname = get_class_class_name(t);
     ast statics = get_class_statics(t);
     ast fields = get_class_fields(t);
@@ -399,17 +400,17 @@ static ast prune_statements(ast t)
     int size = size_of_statements(t);
     for (int i = 0; i < size && !stop_prune_statements; i++)
     {
-        ast deci = get_statements(t, i);   
+        ast deci = get_statements(t, i);
         deci = prune_statement(deci);
         if (deci != nullptr)
             decs.push_back(deci);
 
-        // check whether or not return 
-        if(ast_have_kind(deci, ast_statement))
+        // check whether or not return
+        if (ast_have_kind(deci, ast_statement))
         {
             ast stmt = get_statement_statement(deci);
-            ast_kind kind = ast_node_kind(stmt); 
-            if(kind == ast_return || kind == ast_return_expr)
+            ast_kind kind = ast_node_kind(stmt);
+            if (kind == ast_return || kind == ast_return_expr)
                 stop_prune_statements = true;
         }
     }
@@ -507,15 +508,11 @@ static ast prune_if(ast t)
     ast if_true = get_if_if_true(t);
 
     condition = prune_expr(condition);
-    eval_value ev = evaluate_condition(condition);
-
-    if(ev == cond_false)
-        return nullptr;
-
     if_true = prune_statements(if_true);
 
-    if (ev == cond_true)
-        return size_of_statements(if_true) != 0 ? if_true : nullptr;
+    int ev = evaluate_condition(condition);
+    if (valid_evaluate)
+        return (ev && size_of_statements(if_true) > 0) ? if_true : nullptr;
 
     return create_if(get_ann(t), condition, if_true);
 }
@@ -538,17 +535,17 @@ static ast prune_if_else(ast t)
     int f_size = size_of_statements(if_false);
 
     condition = prune_expr(condition);
-    eval_value ev = evaluate_condition(condition);
+    int ev = evaluate_condition(condition);
+    if (valid_evaluate)
+    {
+        if (ev && t_size > 0)
+            return if_true;
+        if (!ev && f_size > 0)
+            return if_false;
+        return nullptr;
+    }
 
-    // the condition is always true
-    if(ev == cond_true)
-        return t_size != 0 ? if_true : nullptr;
-
-    // the condition is always true
-    if(ev == cond_false)
-        return f_size != 0 ? if_true : nullptr;
-
-    // equivalent to return? 
+    // equivalent to return?
     if (t_size != 0 && f_size != 0)
     {
         ast t_last = get_statements(if_true, t_size - 1);
@@ -574,28 +571,29 @@ static ast prune_while(ast t)
     ast body = get_while_body(t);
 
     condition = prune_expr(condition);
-    eval_value ev = evaluate_condition(condition);
-
-    // invalid while
-    if (ev == cond_false)
-        return nullptr;
-
     body = prune_statements(body);
-    if (ev == cond_true)
-    {
-        int size = size_of_statements(body);
 
-        // equivalent to return?
-        if (size > 0)
+    int ev = evaluate_condition(condition);
+    if (valid_evaluate)
+    {
+        if (ev)
         {
-            ast last = get_statements(body, size - 1);
-            ast_kind kind = ast_node_kind(last);
-            if (kind == ast_return || kind == ast_return_expr)
+            int size = size_of_statements(body);
+
+            // equivalent to return?
+            if (size > 0)
             {
-                stop_prune_statements = true;
-                return body;
+                ast last = get_statements(body, size - 1);
+                ast_kind kind = ast_node_kind(last);
+                if (kind == ast_return || kind == ast_return_expr)
+                {
+                    stop_prune_statements = true;
+                    return body;
+                }
             }
         }
+        else
+            return nullptr;
     }
 
     return create_while(get_ann(t), condition, body);
@@ -787,8 +785,8 @@ static ast prune_unary_op(ast t)
 //
 static ast prune_var(ast t)
 {
-    string segment = get_var_segment(t) ;
-    string name = get_var_name(t) ;
+    string segment = get_var_segment(t);
+    string name = get_var_name(t);
     // string type = get_var_type(t) ;
     // int offset = get_var_offset(t) ;
 
