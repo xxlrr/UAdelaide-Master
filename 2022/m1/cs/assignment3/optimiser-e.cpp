@@ -70,7 +70,10 @@ static ast optimise_subr_call(ast t);
 static ast optimise_expr_list(ast t);
 static ast optimise_infix_op(ast t);
 static ast evaluate_expr(ast lhs, ast op, ast rhs);
+static ast evaluate_unary_op(ast uop);
 
+// optimise a expression
+// return nullptr if the expression is not optimisable
 static ast evaluate_expr(ast lhs, ast op, ast rhs)
 {
     ast lopd = get_term_term(lhs);
@@ -122,10 +125,10 @@ static ast evaluate_expr(ast lhs, ast op, ast rhs)
         switch(optype)
         {
         case tk_add:                 // '+',  tg_infix_op
-            return ilval == 0 ? rhs : nullptr;
+            return ilval == 0 ? ropd : nullptr;
         case tk_times:               // '*',  tg_infix_op
             if (ilval == 0 && rtype == ast_expr) return create_int(0);
-            else if (ilval == 1) return rhs;
+            else if (ilval == 1) return ropd;
             else return nullptr;
         case tk_and:
             return ilval ? nullptr : create_bool(false);
@@ -142,19 +145,19 @@ static ast evaluate_expr(ast lhs, ast op, ast rhs)
         switch(optype)
         {
         case tk_add:                 // '+',  tg_infix_op
-            return irval == 0 ? lhs : nullptr;
+            return irval == 0 ? lopd : nullptr;
         case tk_sub:                 // '-',  tg_infix_op, tg_unary_op
-            return irval == 0 ? lhs : nullptr;
+            return irval == 0 ? lopd : nullptr;
         case tk_times:               // '*',  tg_infix_op
             if (irval == 0 && ltype == ast_expr) return create_int(0);
-            else if (irval == 1) return lhs;
+            else if (irval == 1) return lopd;
             else return nullptr;
         case tk_and:
             return irval ? nullptr : create_bool(false);
         case tk_or:
             return irval ? create_bool(true) : nullptr;
         case tk_divide:              // '/',  tg_infix_op
-            return irval == 1 ? lhs : nullptr;
+            return irval == 1 ? lopd : nullptr;
         default:
             return nullptr;
         }
@@ -185,9 +188,9 @@ static ast evaluate_expr(ast lhs, ast op, ast rhs)
         switch(optype)
         {
         // case tk_and:                 // '&',  tg_infix_op
-        //     return blval ? rhs : create_bool(false);
+        //     return blval ? ropd : create_bool(false);
         // case tk_or:                  // '|',  tg_infix_op
-        //     return blval ? create_bool(true) :rhs;
+        //     return blval ? create_bool(true) :ropd;
         case tk_and:
             return blval ? nullptr : create_bool(false);
         case tk_or:
@@ -203,9 +206,9 @@ static ast evaluate_expr(ast lhs, ast op, ast rhs)
         switch(optype)
         {
         // case tk_and:                 // '&',  tg_infix_op
-        //     return brval ? lhs : create_bool(false);
+        //     return brval ? lopd : create_bool(false);
         // case tk_or:                  // '|',  tg_infix_op
-        //     return brval ? create_bool(true) : lhs;
+        //     return brval ? create_bool(true) : lopd;
         case tk_and:
             return brval ? nullptr : create_bool(false);
         case tk_or:
@@ -229,9 +232,9 @@ static ast evaluate_expr(ast lhs, ast op, ast rhs)
             case tk_sub:
                 return 0;
             case tk_and:                 // '&',  tg_infix_op
-                return lhs;
+                return lopd;
             case tk_or:                  // '|',  tg_infix_op
-                return lhs;
+                return lopd;
             case tk_lt:                  // '<',  tg_infix_op, tg_rel_op
             case tk_gt:                  // '>',  tg_infix_op, tg_rel_op
             // case tk_ne:                  // '~=', tg_infix_op, tg_rel_op
@@ -244,6 +247,47 @@ static ast evaluate_expr(ast lhs, ast op, ast rhs)
                 return nullptr;
             }
         }
+    }
+
+    return nullptr;
+}
+
+static ast evaluate_unary_op(ast uop)
+{
+    string op = get_unary_op_op(uop);
+    ast term = get_unary_op_term(uop);
+    ast opd = get_term_term(term);
+
+    ast_kind kind = ast_node_kind(opd);
+    if (kind == ast_unary_op)
+    {
+        // try to optimize from the outside in
+        string opd_op = get_unary_op_op(opd);
+        ast opd_term = get_unary_op_term(opd);
+        ast opd_opd = get_term_term(opd_term);
+        if (opd_op == op) 
+            return opd_opd;
+
+        // try to optimize from the inside out
+        opd = evaluate_unary_op(opd);
+        if (opd == nullptr)
+            return nullptr;
+        kind = ast_node_kind(opd);
+    }
+
+    if (kind == ast_int)
+    {
+        int val = get_int_constant(opd);
+        if (op == "~")
+            return (val == 0  || val == -1) ? create_bool(val == -1) : create_int(~val);
+        else if (op == "-")
+            // todo
+            return create_int(-val);
+    }
+    else if (kind == ast_bool)
+    {
+        if (op == "~")
+            return create_bool(!get_bool_t_or_f(opd));
     }
 
     return nullptr;
@@ -675,6 +719,7 @@ static ast optimise_expr(ast t)
 static ast optimise_term(ast t)
 {
     ast term = get_term_term(t);
+    ast evalue = nullptr;
 
     switch (ast_node_kind(term))
     {
@@ -700,6 +745,9 @@ static ast optimise_term(ast t)
         break;
     case ast_unary_op:
         term = optimise_unary_op(term);
+        evalue = evaluate_unary_op(term);
+        if (evalue != nullptr)
+            term = evalue;
         break;
     case ast_var:
         term = optimise_var(term);
