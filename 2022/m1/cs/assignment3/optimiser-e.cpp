@@ -279,7 +279,7 @@ static ast evaluate_unary_op(ast uop)
     {
         int val = get_int_constant(opd);
         if (op == "~")
-            return (val == 0  || val == -1) ? create_bool(val == -1) : create_int(~val);
+            return (val == 0  || val == -1) ? create_bool(val == 0) : create_int(~val);
         else if (op == "-")
             // todo
             return create_int(-val);
