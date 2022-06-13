@@ -494,11 +494,11 @@ static ast prune_if(ast t)
     eval_value ev = evaluate_condition(condition);
 
     if(ev == cond_false)
-        return create_empty();
+        return nullptr;
 
     if_true = prune_statement(if_true);
     if (size_of_statements(if_true) == 0)
-        return create_empty();
+        return nullptr;
 
     if (ev == cond_true)
         return if_true;
@@ -517,9 +517,20 @@ static ast prune_if_else(ast t)
     ast if_true = get_if_else_if_true(t);
     ast if_false = get_if_else_if_false(t);
 
-    condition = prune_expr(condition);
     if_true = prune_statements(if_true);
     if_false = prune_statements(if_false);
+
+    if (size_of_statements(if_true) == 0 && size_of_statements(if_false) == 0)
+        return nullptr;
+
+    condition = prune_expr(condition);
+    eval_value ev = evaluate_condition(condition);
+
+    if(ev == cond_true)
+        return if_true;
+
+    if(ev == cond_false)
+        return if_false;
 
     return create_if_else(get_ann(t), condition, if_true, if_false);
 }
@@ -540,8 +551,6 @@ static ast prune_while(ast t)
         return nullptr;
 
     body = prune_statements(body);
-    // if (size_of_statements(body) == 0)
-    //     return nullptr;
 
     return create_while(get_ann(t), condition, body);
 }
