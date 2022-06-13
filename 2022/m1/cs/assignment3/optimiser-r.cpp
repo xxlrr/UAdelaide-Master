@@ -382,18 +382,29 @@ static ast prune_var_decs(ast t)
 // copy an ast statements node
 // it is an ast vector of statement nodes
 //
+static bool stop_prune_statements = false;
 static ast prune_statements(ast t)
 {
     vector<ast> decs;
 
     int size = size_of_statements(t);
-    for (int i = 0; i < size; i++)
+    for (int i = 0; i < size && !stop_prune_statements; i++)
     {
-        ast deci = get_statements(t, i);
+        ast deci = get_statements(t, i);   
         deci = prune_statement(deci);
         if (deci != nullptr)
             decs.push_back(deci);
+
+        // check whether or not return 
+        if(ast_have_kind(deci, ast_statement))
+        {
+            ast stmt = get_statement_statement(deci);
+            ast_kind kind = ast_node_kind(stmt); 
+            if(kind == ast_return || kind == ast_return_expr)
+                stop_prune_statements = true;
+        }
     }
+    stop_prune_statements = false;
 
     return create_statements(get_ann(t), decs);
 }
@@ -516,17 +527,36 @@ static ast prune_if_else(ast t)
     if_true = prune_statements(if_true);
     if_false = prune_statements(if_false);
 
-    if (size_of_statements(if_true) == 0 && size_of_statements(if_false) == 0)
+    int t_size = size_of_statements(if_true);
+    int f_size = size_of_statements(if_false);
+
+    // body is empty
+    if (t_size == 0 && f_size == 0)
         return nullptr;
 
     condition = prune_expr(condition);
     eval_value ev = evaluate_condition(condition);
 
+    // the condition is always true
     if(ev == cond_true)
         return if_true;
 
+    // the condition is always true
     if(ev == cond_false)
         return if_false;
+
+    // equivalent to return? 
+    if (t_size != 0 && f_size != 0)
+    {
+        ast t_last = get_statements(if_true, t_size - 1);
+        ast f_last = get_statements(if_true, f_size - 1);
+        ast_kind t_kind = ast_node_kind(t_last);
+        ast_kind f_kind = ast_node_kind(f_last);
+
+        if ((t_kind == ast_return || t_kind == ast_return_expr)
+                && (f_kind == ast_return || f_kind == ast_return_expr))
+            stop_prune_statements = true;
+    }
 
     return create_if_else(get_ann(t), condition, if_true, if_false);
 }
@@ -543,10 +573,27 @@ static ast prune_while(ast t)
     condition = prune_expr(condition);
     eval_value ev = evaluate_condition(condition);
 
-    if(ev == cond_false)
+    // invalid while
+    if (ev == cond_false)
         return nullptr;
 
     body = prune_statements(body);
+    if (ev == cond_true)
+    {
+        // invalid while
+        int size = size_of_statements(body);
+        if (size == 0)
+            return nullptr;
+
+        // equivalent to return?
+        ast last = get_statements(body, size - 1);
+        ast_kind kind = ast_node_kind(last);
+        if (kind == ast_return || kind == ast_return_expr)
+        {
+            stop_prune_statements = true;
+            return body;
+        }
+    }
 
     return create_while(get_ann(t), condition, body);
 }
