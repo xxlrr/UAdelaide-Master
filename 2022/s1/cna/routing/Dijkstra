@@ -30,7 +30,7 @@ class Node:
 
     def routing_table_to_string(self):
         str = f"{self.name} Routing Table:\n"
-        for dest, (next, cost) in sorted(self.link_states.items()):
+        for dest, (next, cost) in sorted(self.routing_table.items()):
             str += f"{dest},{next},{cost}\n"
         str += "\n"
         return str
@@ -54,15 +54,21 @@ def Dijkstra(nodes):
         # initialisation
         _ns = {u}
         D = {v: nodes[u].neighbors.get(v, float("inf")) for v in ns if v != u}
-
-    while _ns != ns:
-        # find w not in N' such that D(w) is a minimum
-        w = min(filter(lambda v: v not in _ns, D), key=lambda v: D[v])
-        # add w to N’ 
-        _ns.add(w)
-        # update D(v) for each neighbor v of w and not in N':
-        for v in filter(lambda v: v not in _ns, nodes[w].neighbors):
-            D[v] = min(D[v], nodes[w].neighbors[v] + D[w])
+        link_states = nodes[u].link_states = {tuple(sorted([u, v])): D[v] for v in D if D[v] != float("inf")}
+        route_table = nodes[u].routing_table = {v: (v, D[v]) for v in D if D[v] != float("inf")}
+        # visit each node
+        while _ns != ns:
+            # find w not in N' such that D(w) is a minimum
+            w = min(filter(lambda v: v not in _ns, D), key=lambda v: (D[v], v))
+            # add w to N’ 
+            _ns.add(w)
+            # update D(v) for each neighbor v of w and not in N':
+            if D[w] != float("inf"):
+                for v in filter(lambda v: v not in _ns, nodes[w].neighbors):
+                    D[v] = min(D[v], nodes[w].neighbors[v] + D[w])
+                    if D[v] == nodes[w].neighbors[v] + D[w]:
+                        route_table[v] = (route_table[w][0], D[v])
+                    link_states[tuple(sorted([v, w]))] = nodes[w].neighbors[v]
 
 
 def main():
@@ -84,10 +90,10 @@ def main():
         fields = line.split()   # fields == (name, neighbor, cost, [router_list])
         nodes[fields[0]].set_neighbor(fields[1], int(fields[2]))
         nodes[fields[1]].set_neighbor(fields[0], int(fields[2]))
+        Dijkstra(nodes)
         if len(fields) == 4:
             for name in fields[3].split(","):
                 print(nodes[name].detail_to_string(), end="")
-        Dijkstra(nodes)
 
     # update link states
     while True:
@@ -101,10 +107,10 @@ def main():
             nodes[fields[1]] = Node(fields[1])
         nodes[fields[0]].set_neighbor(fields[1], int(fields[2]))
         nodes[fields[1]].set_neighbor(fields[0], int(fields[2]))
+        Dijkstra(nodes)
         if len(fields) == 4:
             for name in fields[3].split(","):
                 print(nodes[name].detail_to_string(), end="")
-        Dijkstra(nodes)
     
 
 # for debug
