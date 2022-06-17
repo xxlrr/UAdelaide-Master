@@ -3,6 +3,8 @@
 # Author: a1845302
 # Name:   Hongxing Hao
 
+from heapq import heappop, heappush
+
 class Node:
     """A router node."""
 
@@ -61,23 +63,31 @@ def Dijkstra(nodes):
         D = {v: nodes[u].neighbors.get(v, float("inf")) for v in ns if v != u}
         link_states = nodes[u].link_states = {tuple(sorted([u, v])): D[v] for v in D if D[v] != float("inf")}
         route_table = nodes[u].routing_table = {v: (v, D[v]) for v in D if D[v] != float("inf")}
-        # visit each node
-        while _ns != ns:
-            # find w not in N' such that D(w) is a minimum
-            w = min(filter(lambda v: v not in _ns, D), key=lambda v: (D[v], v))
-            # add w to N’ 
+
+        # initialise the priority Queue
+        pq = []
+        for v, c in D.items():
+            if c != float("inf"):
+                heappush(pq, (c, v))
+
+        # visit the priority Queue
+        while pq:
+            # find w not in N' such that D(w) is a minimum using priority queue
+            w = heappop(pq)[1]
             _ns.add(w)
             # update D(v) for each neighbor v of w and not in N':
-            if D[w] != float("inf"):
+            if D.get(w, float("inf")) != float("inf"):
                 for v in filter(lambda v: v not in _ns, nodes[w].neighbors):
                     Dvw = D[w] + nodes[w].neighbors[v]
-                    if Dvw < D[v]:
+                    if Dvw < D.get(v, float("inf")):
                         route_table[v] = (route_table[w][0], Dvw)
                         D[v] = Dvw
-                    elif Dvw == D[v]:
+                        heappush(pq, (Dvw, v))
+                    elif Dvw == D.get(v, float("inf")):
                         # Both paths cost the same, select the first one
                         #  in an alphabetical ordering of the next hop router name
                         route_table[v] = (min(route_table[v][0], route_table[w][0]), Dvw)
+                        heappush(pq, (Dvw, v))
                     link_states[tuple(sorted([w, v]))] = nodes[w].neighbors[v]
 
 
