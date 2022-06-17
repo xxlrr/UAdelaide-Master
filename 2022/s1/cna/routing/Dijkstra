@@ -65,10 +65,15 @@ def Dijkstra(nodes):
             # update D(v) for each neighbor v of w and not in N':
             if D[w] != float("inf"):
                 for v in filter(lambda v: v not in _ns, nodes[w].neighbors):
-                    D[v] = min(D[v], nodes[w].neighbors[v] + D[w])
-                    if D[v] == nodes[w].neighbors[v] + D[w]:
-                        route_table[v] = (route_table[w][0], D[v])
-                    link_states[tuple(sorted([v, w]))] = nodes[w].neighbors[v]
+                    Dvw = D[w] + nodes[w].neighbors[v]
+                    if Dvw < D[v]:
+                        route_table[v] = (route_table[w][0], Dvw)
+                        D[v] = Dvw
+                    elif Dvw == D[v]:
+                        # Both paths cost the same, select the first one
+                        #  in an alphabetical ordering of the next hop router name
+                        route_table[v] = (min(route_table[v][0], route_table[w][0]), Dvw)
+                    link_states[tuple(sorted([w, v]))] = nodes[w].neighbors[v]
 
 
 def main():
