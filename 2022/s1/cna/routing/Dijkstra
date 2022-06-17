@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+
+# Author: a1845302
+# Name:   Hongxing Hao
+
 class Node:
     """A router node."""
 
