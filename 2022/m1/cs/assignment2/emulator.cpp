@@ -11,8 +11,6 @@
 #include "symbols.h"
 #include "hack_computer.h"
 #include <bitset>
-#include <vector>
-#include <iostream>
 
 // to make out programs a bit neater
 using namespace std;

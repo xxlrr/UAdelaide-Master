@@ -111,7 +111,7 @@ namespace Assignment_Tokeniser
     static void parse_eol_comment_or_symbol()
     {
         next_char_mustbe('/');
-        if(next_char_isa('/')) return parse_eol_suffix();
+        if(next_char_isa('/')) parse_eol_suffix();
         // else do nothing 
     }
 

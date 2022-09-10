@@ -223,10 +223,6 @@ namespace Assignment_Tokeniser
     // the spelling is a valid token or "" if at end of input
     TokenKind classify_spelling(string spelling)
     {
-
-        // I guess you might think it would be more efficient to use switch (spelling[0]) in this function.
-        // But I prefer if (like Python). It's a lot clearer and more accurate, isn't it?
-
         if (spelling == "") return tk_eoi;
 
         // MILESTONE TESTS Tokens to be recognised:
@@ -361,34 +357,31 @@ namespace Assignment_Tokeniser
 
     // work out the correct spelling to use in the Token object being created by new_token()
     // the spelling is a valid token and kind is its kind
-    string correct_spelling(TokenKind kind,string spelling)
+    string correct_spelling(TokenKind kind, string spelling)
     {
-        if (spelling == "") return "";        
+        if (spelling == "") return "";
 
-        // fixing hash_comment
-        if (kind == tk_hash_comment){
+        switch (kind)
+        {
+        case tk_hash_comment:
             // delete '#' and '\n'
             return spelling.substr(1, spelling.length() - 2);
-        }
 
-        // fixing eol_comment
-        if (kind == tk_eol_comment){
+        case tk_eol_comment:
             // delete "//" and '\n'
             return spelling.substr(2, spelling.length() - 3);
-        }
 
-        // fixing string
-        if (kind == tk_string){
+        case tk_string:
             // delete '"' at at the beginning and end
             return spelling.substr(1, spelling.length() - 2);
-        }
 
-        // finxing scientific
-        if (kind == tk_scientific){ 
+        case tk_scientific:
             return format_scientific(spelling);
+
+        default:
+            break;
         }
 
-        return spelling ;
+        return spelling;
     }
-
 }
