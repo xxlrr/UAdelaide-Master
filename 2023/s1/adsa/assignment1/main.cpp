@@ -1,12 +1,13 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
+#include <math.h>
 
 using namespace std;
 
 
 // Function to make str1 and str2 be the same length by adding leading 0s
-int makeEqualLength(string &str1, string &str2)
+int equalizeLength(string &str1, string &str2)
 {
     int len1 = str1.length();
     int len2 = str2.length();
@@ -40,6 +41,23 @@ int compare(string num1, string num2) {
     }
 
     return 0;
+}
+
+// Function to convert a decimal number to another base
+string decimalTo(int base, int num) {
+    if (base == 10) {
+        return to_string(num);
+    }
+
+    string result = "";
+    while (num >= base) {
+        int quotient = num / base;
+        int remainder = num % base;
+        result = to_string(remainder) + result;
+        num = quotient;
+    }
+    result = to_string(num) + result;
+    return result;
 }
 
 // Function to add two numbers using the school method
@@ -87,23 +105,25 @@ string sub(string a, string b, int base) {
 
 // Function to multiply two numbers using the Karatsuba algorithm
 string karatsuba(string num1, string num2, int base) {
-    int n = makeEqualLength(num1, num2);
+    int n = equalizeLength(num1, num2);
     if (n == 1) {
         int prod = (num1[0]-'0') * (num2[0]-'0');
-        return to_string(prod);
+        return decimalTo(base, prod);
     }
-    int half = n / 2;
-    string a0 = num1.substr(0, num1.length() - half);
-    string a1 = num1.substr(num1.length() - half);
-    string b0 = num2.substr(0, num2.length() - half);
-    string b1 = num2.substr(num2.length() - half);
+    int half = ceil(n / 2.0);
+    string a0 = num1.substr(num1.length() - half);
+    string a1 = num1.substr(0, num1.length() - half);
+    string b0 = num2.substr(num2.length() - half);
+    string b1 = num2.substr(0, num2.length() - half);
     string p0 = karatsuba(a0, b0, base);
     string p1 = karatsuba(a1, b1, base);
     string p2 = karatsuba(add(a0, a1, base), add(b0, b1, base), base);
-    string p3 = sub(sub(p2, p1, base), p0, base);
+    string p3 = sub(p2, add(p1, p0, base), base);
+
+    // prod = p0 + p1*pow(base, 2half) + p3*pow(base, half)
     string prod = p0;
     for (int i = 0; i < 2 * half; i++) {
-        prod += "0";
+        p1 += "0";
     }
     prod = add(prod, p1, base);
     for (int i = 0; i < half; i++) {
