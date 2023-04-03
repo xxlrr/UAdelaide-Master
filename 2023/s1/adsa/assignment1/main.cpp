@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
-#include <math.h>
 
 using namespace std;
 
@@ -110,7 +109,7 @@ string karatsuba(string num1, string num2, int base) {
         int prod = (num1[0]-'0') * (num2[0]-'0');
         return decimalTo(base, prod);
     }
-    int half = ceil(n / 2.0);
+    int half = n / 2;
     string a0 = num1.substr(num1.length() - half);
     string a1 = num1.substr(0, num1.length() - half);
     string b0 = num2.substr(num2.length() - half);
