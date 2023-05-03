@@ -59,67 +59,65 @@ Node* rotateLeft(Node* node)
     return newRoot;
 }
 
-// Utility function to perform a left-right rotation around a node
-Node* rotateLeftRight(Node* node)
-{
-    node->left = rotateLeft(node->left);
-    return rotateRight(node);
-}
+// // Utility function to perform a left-right rotation around a node
+// Node* rotateLeftRight(Node* node)
+// {
+//     node->left = rotateLeft(node->left);
+//     return rotateRight(node);
+// }
 
-// Utility function to perform a right-left rotation around a node
-Node* rotateRightLeft(Node* node)
-{
-    node->right = rotateRight(node->right);
-    return rotateLeft(node);
-}
+// // Utility function to perform a right-left rotation around a node
+// Node* rotateRightLeft(Node* node)
+// {
+//     node->right = rotateRight(node->right);
+//     return rotateLeft(node);
+// }
 
 // Utility function to insert a value into the AVL tree
 Node* insert(Node* root, int val)
 {
-    // If the root is nullptr, create a new node with the given value
+    // 0. If the root is nullptr, create a new node with the given value
     if (root == nullptr)
-    {
-        root = new Node(val);
-    }
-    // If the value is less than the root's value, insert it into the left subtree
-    else if (val < root->val)
-    {
+        return new Node(val);
+
+    // 1. insert the val to the tree
+    if (val < root->val)
         root->left = insert(root->left, val);
-        // Check if the left subtree became unbalanced
-        if (balanceFactor(root) == 2)
-        {
-            // Determine whether a left-left or left-right rotation is necessary
-            if (val < root->left->val)
-            {
-                root = rotateRight(root);
-            }
-            else
-            {
-                root = rotateLeftRight(root);
-            }
-        }
-    }
-    // If the value is greater than the root's value, insert it into the right subtree
     else if (val > root->val)
-    {
         root->right = insert(root->right, val);
-        // Check if the right subtree became unbalanced
-        if (balanceFactor(root) == -2)
-        {
-            // Determine whether a right-right or right-left rotation is necessary
-            if (val > root->right->val)
-            {
-                root = rotateLeft(root);
-            }
-            else
-            {
-                root = rotateRightLeft(root);
-            }
-        }
-    }
-    // If the value is already in the tree, do nothing
-    // (note: this implementation considers that duplicates are not allowed in the tree)
+    // else if the value is already in the tree, do nothing
+
+    // 2. update height
     updateHeight(root);
+
+    // 3. balance if this tree becomes unbalanced
+    //    there are 4 cases: left-left, left-right, right-right, right-left
+    int balance = balanceFactor(root);
+
+    // left-left case
+    if (balance > 1 && val < root->left->val)
+    {
+        return rotateRight(root);
+    }
+    // left-right case
+    if (balance > 1 && val > root->left->val)
+    {
+        root->left = rotateLeft(root->left);
+        return rotateRight(root);
+    }
+    // right-right case
+    if (balance < -1 && val > root->right->val)
+    {
+        return rotateLeft(root);
+    }
+    // right-left case
+    if (balance < -1 && val < root->right->val)
+    {
+        root->right = rotateRight(root->right);
+        return rotateRight(root);
+    }
+    
+    // return if the tree don't need balance
     return root;
 }
 
@@ -134,43 +132,19 @@ Node* findMin(Node* root)
 // Utility function to delete a node with a given value from the AVL tree
 Node* remove(Node* root, int val)
 {
+    // return directly nullptr if the root == nullptr
     if (root == nullptr)
-        return nullptr;
+        return root;
+
     // If the value is less than the root's value, delete it from the left subtree
     if (val < root->val)
     {
         root->left = remove(root->left, val);
-        // Check if the left subtree became unbalanced
-        if (balanceFactor(root) == -2)
-        {
-            // Determine whether a right-right or right-left rotation is necessary
-            if (balanceFactor(root->right) <= 0)
-            {
-                root = rotateLeft(root);
-            }
-            else
-            {
-                root = rotateRightLeft(root);
-            }
-        }
     }
     // If the value is greater than the root's value, delete it from the right subtree
     else if (val > root->val)
     {
         root->right = remove(root->right, val);
-        // Check if the right subtree became unbalanced
-        if (balanceFactor(root) == 2)
-        {
-            // Determine whether a left-left or left-right rotation is necessary
-            if (balanceFactor(root->left) >= 0)
-            {
-                root = rotateRight(root);
-            }
-            else
-            {
-                root = rotateLeftRight(root);
-            }
-        }
     }
     // If the value is equal to the root's value, delete the root
     else
@@ -186,7 +160,7 @@ Node* remove(Node* root, int val)
             }
             else
             {
-                root = temp;
+                *root = *temp;
             }
             delete temp;
         }
@@ -203,6 +177,38 @@ Node* remove(Node* root, int val)
         return root;
     // Otherwise, update the height of the root and return it
     updateHeight(root);
+        return root;
+
+    // rebalance it if this node became unbalanced)
+    int balance = balanceFactor(root);
+ 
+    // then there are 4 cases: left-left, left-right, rigit-right, right-left
+ 
+    // Left Left Case
+    if (balance > 1 && balanceFactor(root->left) >= 0)
+        return rotateRight(root);
+ 
+    // Left Right Case
+    if (balance > 1 &&
+        balanceFactor(root->left) < 0)
+    {
+        root->left = rotateLeft(root->left);
+        return rotateRight(root);
+    }
+ 
+    // Right Right Case
+    if (balance < -1 &&
+        balanceFactor(root->right) <= 0)
+        return rotateLeft(root);
+ 
+    // Right Left Case
+    if (balance < -1 &&
+        balanceFactor(root->right) > 0)
+    {
+        root->right = rotateRight(root->right);
+        return rotateLeft(root);
+    }
+
     return root;
 }
 
@@ -298,6 +304,7 @@ int main()
         {
             printTree(root, move);
         }
+        int a=0;
     }
     
     return 0;
