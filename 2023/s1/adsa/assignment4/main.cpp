@@ -1,96 +1,115 @@
 #include <iostream>
+#include <climits>
 #include <vector>
-#include <algorithm>
-#include <numeric>
+#include <cmath>
 
 using namespace std;
 
-struct Edge {
-    int u, v, cost;
-    Edge(int _u, int _v, int _cost) : u(_u), v(_v), cost(_cost) {}
-};
-
-bool compareEdges(const Edge& e1, const Edge& e2) {
-    return e1.cost < e2.cost;
-}
+const int MAX_CITIES = 3;
 
 int charToCost(char c) {
-    if (isupper(c))
+    if (c >= 'A' && c <= 'Z') {
         return c - 'A';
-    else
+    } else {
         return c - 'a' + 26;
+    }
 }
 
-int findRoot(int city, vector<int>& parent) {
-    if (parent[city] != city)
-        parent[city] = findRoot(parent[city], parent);
-    return parent[city];
-}
+// 修建或摧毁道路的函数
+int findMinCost(vector<vector<int>>& country, vector<vector<int>>& rebuild, vector<vector<int>>& destroy) {
+    int totalCost = 0;
+    int n = country.size();
 
-int reconstructRoadNetwork(const vector<string>& country, const vector<string>& build, const vector<string>& destroy) {
-    int N = country.size();
-    vector<Edge> edges;
-    for (int i = 0; i < N; i++) {
-        for (int j = i + 1; j < N; j++) {
-            if (country[i][j] == '1') {
-                edges.emplace_back(i, j, -charToCost(destroy[i][j]));
-            } else {
-                edges.emplace_back(i, j, charToCost(build[i][j]));
+    // 初始化图的邻接矩阵
+    vector<vector<int>> graph(n, vector<int>(n, 0));    
+
+    // 初始化图的邻接矩阵为重建花费，如果每对城市之间已存在路径那么花费设为0
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            graph[i][j] = country[i][j] == 0 ? rebuild[i][j] : 0;
+        }
+    }
+
+    // 对于每对城市之间的连接，如果存在更低的摧毁费用，更新邻接矩阵
+    // for (int i = 0; i < n; ++i) {
+    //     for (int j = 0; j < n; ++j) {
+    //         if (destroy[i][j] < rebuild[i][j]) {
+    //             graph[i][j] = destroy[i][j];
+    //         }
+    //     }
+    // }
+
+    // 使用Floyd-Warshall算法计算每对城市之间的最短路径
+    for (int k = 0; k < n; ++k) {
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < n; ++j) {
+                if (graph[i][k] != INT_MAX && graph[k][j] != INT_MAX && (graph[i][k] + graph[k][j]) < graph[i][j]) {
+                    graph[i][j] = graph[i][k] + graph[k][j];
+                }
             }
         }
     }
-    sort(edges.begin(), edges.end(), compareEdges);
 
-    vector<int> parent(N);
-    iota(parent.begin(), parent.end(), 0);
-
-    int totalCost = 0;
-    int edgeCount = 0;
-
-    for (const Edge& edge : edges) {
-        int rootU = findRoot(edge.u, parent);
-        int rootV = findRoot(edge.v, parent);
-
-        if (rootU != rootV) {
-            parent[rootU] = rootV;
-            totalCost += edge.cost;
-            edgeCount++;
+    // 修建或摧毁道路，使每对不同城市之间只存在一条连接路径
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            for (int k = 0; k < n; ++k) {
+                if (i != j && i != k && j != k && graph[i][j] != INT_MAX && graph[i][k] != INT_MAX && graph[k][j] != INT_MAX) {
+                    if (graph[i][j] == (graph[i][k] + graph[k][j])) {
+                        // 存在其他路径连接，摧毁道路
+                        graph[i][j] = INT_MAX;
+                    }
+                }
+            }
         }
-
-        if (edgeCount == N - 1)
-            break;
     }
 
-    return -totalCost;
+    // 计算总成本
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            if (graph[i][j] != INT_MAX) {
+                totalCost += graph[i][j];
+            }
+        }
+    }
+
+    // 输出结果
+    return totalCost;
 }
 
-vector<string> splitString(const string& input, char delimiter) {
-    vector<string> parts;
-    string part;
-    for (char c : input) {
-        if (c == delimiter) {
-            parts.push_back(part);
-            part.clear();
-        } else {
-            part += c;
+void display2(vector<vector<int>>& a, int ci, int cj){
+    for (int i=0; i<ci; i++) {
+        for (int j=0; j<cj; j++) {
+            cout << char(a[i][j]);
         }
+        cout << endl;
     }
-    parts.push_back(part);
-    return parts;
 }
 
 int main() {
-    string countryInput, buildInput, destroyInput;
-    getline(cin, countryInput);
-    getline(cin, buildInput);
-    getline(cin, destroyInput);
-    vector<string> country = splitString(countryInput, ',');
-    vector<string> build = splitString(buildInput, ',');
-    vector<string> destroy = splitString(destroyInput, ',');
+    string countryStr, buildStr, destroyStr;
+    cin >> countryStr >> buildStr >> destroyStr;
 
-    int minimalCost = reconstructRoadNetwork(country, build, destroy);
+    // According to the analysis, the number of cities (n) and the length (L) of countryStr
+    // is a quadratic relationship: L=n*n+(n-1).
+    // According to the quadratic formula, it can be simplified: n = (Sqrt(4L+5) - 1) / 2.
+    int n = (sqrt(4*countryStr.length()+5) - 1) / 2;
+    vector<vector<int>> country(n, vector<int>(n, 0));
+    vector<vector<int>> build(n, vector<int>(n, 0));
+    vector<vector<int>> destroy(n, vector<int>(n, 0));
 
-    cout << minimalCost << endl;
+    // Parse the input strings.
+    for (int i = 0, commas=0; i < n; i++, commas++) {
+        for (int j = 0; j < n; j++) {
+            country[i][j] = countryStr[i * n + j + commas] - '0';
+            build[i][j] = charToCost(buildStr[i * n + j + commas]);
+            destroy[i][j] = charToCost(destroyStr[i * n + j + commas]);
+        }
+    }
+
+    // Calculate the min cost.
+    int minCost = findMinCost(country, build, destroy);
+    cout << minCost << endl;
 
     return 0;
 }
