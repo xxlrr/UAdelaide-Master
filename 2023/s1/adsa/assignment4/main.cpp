@@ -31,7 +31,7 @@ int reconstructRoadNetwork(const vector<string>& country, const vector<string>& 
     int N = country.size();
     vector<Edge> edges;
     for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
+        for (int j = i + 1; j < N; j++) {
             if (country[i][j] == '1') {
                 edges.emplace_back(i, j, -charToCost(destroy[i][j]));
             } else {
