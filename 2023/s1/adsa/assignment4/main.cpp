@@ -14,6 +14,13 @@ bool compareEdges(const Edge& e1, const Edge& e2) {
     return e1.cost < e2.cost;
 }
 
+int charToCost(char c) {
+    if (isupper(c))
+        return c - 'A';
+    else
+        return c - 'a' + 26;
+}
+
 int findRoot(int city, vector<int>& parent) {
     if (parent[city] != city)
         parent[city] = findRoot(parent[city], parent);
@@ -26,9 +33,9 @@ int reconstructRoadNetwork(const vector<string>& country, const vector<string>& 
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < N; j++) {
             if (country[i][j] == '1') {
-                edges.emplace_back(i, j, destroy[i][j]);
+                edges.emplace_back(i, j, -charToCost(destroy[i][j]));
             } else {
-                edges.emplace_back(i, j, build[i][j]);
+                edges.emplace_back(i, j, charToCost(build[i][j]));
             }
         }
     }
@@ -54,7 +61,7 @@ int reconstructRoadNetwork(const vector<string>& country, const vector<string>& 
             break;
     }
 
-    return totalCost;
+    return -totalCost;
 }
 
 vector<string> splitString(const string& input, char delimiter) {
@@ -74,7 +81,9 @@ vector<string> splitString(const string& input, char delimiter) {
 
 int main() {
     string countryInput, buildInput, destroyInput;
-    cin >> countryInput >> buildInput >> destroyInput;
+    getline(cin, countryInput);
+    getline(cin, buildInput);
+    getline(cin, destroyInput);
     vector<string> country = splitString(countryInput, ',');
     vector<string> build = splitString(buildInput, ',');
     vector<string> destroy = splitString(destroyInput, ',');
