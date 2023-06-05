@@ -5,8 +5,17 @@
 
 using namespace std;
 
-const int MAX_CITIES = 3;
+// for test
+void display(vector<vector<int>>& a, int ci, int cj){
+    for (int i=0; i<ci; i++) {
+        for (int j=0; j<cj; j++) {
+            cout << a[i][j] << " ";
+        }
+        cout << endl;
+    }
+}
 
+// Function to convert character to cost
 int charToCost(char c) {
     if (c >= 'A' && c <= 'Z') {
         return c - 'A';
@@ -15,75 +24,83 @@ int charToCost(char c) {
     }
 }
 
-// 修建或摧毁道路的函数
-int findMinCost(vector<vector<int>>& country, vector<vector<int>>& rebuild, vector<vector<int>>& destroy) {
-    int totalCost = 0;
+// Function to find the minimum cost of building or destroying roads
+int findMinCost(vector<vector<int>>& country, vector<vector<int>>& build, vector<vector<int>>& destroy) {
+    // Number of cities
     int n = country.size();
 
-    // 初始化图的邻接矩阵
-    vector<vector<int>> graph(n, vector<int>(n, 0));    
-
-    // 初始化图的邻接矩阵为重建花费，如果每对城市之间已存在路径那么花费设为0
+    // Store building costs
+    vector<vector<int>> buildCosts(n, vector<int>(n, 0));
+    // Store destruction costs
+    vector<vector<int>> destroyCosts(n, vector<int>(n, 0));
+    // Store the lowest cost (shortest path) for connecting cities with roads
+    vector<vector<int>> roadCosts(n, vector<int>(n, 0));    
+    
+    // 1. First, assume roads are directly connected between all cities.
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
-            graph[i][j] = country[i][j] == 0 ? rebuild[i][j] : 0;
+            // If there is already a direct road between city i and city j, the building cost is 0; otherwise, it is build[i][j].
+            buildCosts[i][j] = country[i][j] == 0 ? build[i][j] : 0;
+            // At this point, the initial lowest cost is equal to the building cost.
+            roadCosts[i][j] = buildCosts[i][j];
         }
     }
 
-    // 对于每对城市之间的连接，如果存在更低的摧毁费用，更新邻接矩阵
-    // for (int i = 0; i < n; ++i) {
-    //     for (int j = 0; j < n; ++j) {
-    //         if (destroy[i][j] < rebuild[i][j]) {
-    //             graph[i][j] = destroy[i][j];
-    //         }
-    //     }
-    // }
-
-    // 使用Floyd-Warshall算法计算每对城市之间的最短路径
+    // 2. Next, use the Floyd-Warshall algorithm to calculate the lowest cost (shortest path) for all cities.
     for (int k = 0; k < n; ++k) {
         for (int i = 0; i < n; ++i) {
             for (int j = 0; j < n; ++j) {
-                if (graph[i][k] != INT_MAX && graph[k][j] != INT_MAX && (graph[i][k] + graph[k][j]) < graph[i][j]) {
-                    graph[i][j] = graph[i][k] + graph[k][j];
-                }
-            }
-        }
-    }
-
-    // 修建或摧毁道路，使每对不同城市之间只存在一条连接路径
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
-            for (int k = 0; k < n; ++k) {
-                if (i != j && i != k && j != k && graph[i][j] != INT_MAX && graph[i][k] != INT_MAX && graph[k][j] != INT_MAX) {
-                    if (graph[i][j] == (graph[i][k] + graph[k][j])) {
-                        // 存在其他路径连接，摧毁道路
-                        graph[i][j] = INT_MAX;
+                if (i != j && i != k && j != k && roadCosts[i][k] != INT_MAX && roadCosts[k][j] != INT_MAX) {
+                    // If the cost of linking cities i and j through intermediate node k (plus the destruction cost) is lower than or equal to the current connection cost, then we need to do something.
+                    int budget = roadCosts[i][k] + roadCosts[k][j] + (country[i][j] == 1 ? destroy[i][j] : 0);
+                    if (budget <= roadCosts[i][j]) {
+                        if (country[i][j] == 1) {
+                            // If there was already a road, record the destruction cost.
+                            destroyCosts[i][j] = destroy[i][j];
+                            // Set country[i][j] to 0 because it no longer needs to be destroyed again.
+                            country[i][j] = 0;
+                        }
+                        // Erase the building cost.
+                        buildCosts[i][j] = 0;
+                        // Set the road cost between i and j to infinity (used to indicate road removal).
+                        roadCosts[i][j] = INT_MAX;
                     }
                 }
             }
         }
     }
 
-    // 计算总成本
+    // 3. If multiple connecting paths still exist between different pairs of cities, keep only the unique paths.
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
-            if (graph[i][j] != INT_MAX) {
-                totalCost += graph[i][j];
+            for (int k = 0; k < n; ++k) {
+                if (i != j && i != k && j != k && roadCosts[i][j] != INT_MAX && roadCosts[i][k] != INT_MAX && roadCosts[k][j] != INT_MAX) {
+                    if (roadCosts[i][j] == (roadCosts[i][k] + roadCosts[k][j])) {
+                        // If there are other paths connecting the cities, destroy the road.
+                        roadCosts[i][j] = INT_MAX;
+                        if (country[i][j] == 1) {
+                            // If there was already a road, record the destruction cost.
+                            destroyCosts[i][j] = destroy[i][j];
+                            // Set country[i][j] to 0 because it no longer needs to be destroyed again.
+                            country[i][j] = 0;
+                        }
+                    }
+                }
             }
         }
     }
 
-    // 输出结果
-    return totalCost;
-}
-
-void display2(vector<vector<int>>& a, int ci, int cj){
-    for (int i=0; i<ci; i++) {
-        for (int j=0; j<cj; j++) {
-            cout << char(a[i][j]);
+    // Calculate the total cost
+    int totalCost = 0;
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            totalCost += buildCosts[i][j] + destroyCosts[i][j];
         }
-        cout << endl;
     }
+    totalCost = totalCost / 2;
+
+    // Return the result
+    return totalCost;
 }
 
 int main() {
