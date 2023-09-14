@@ -1,0 +1,91 @@
+#include <iostream>
+#include <climits>
+#include <vector>
+#include <cmath>
+
+using namespace std;
+
+// for test
+void display(vector<vector<int>>& a, int ci, int cj){
+    for (int i=0; i<ci; i++) {
+        for (int j=0; j<cj; j++) {
+            cout << a[i][j] << " ";
+        }
+        cout << endl;
+    }
+}
+
+int charToCost(char c) {
+    if (c >= 'A' && c <= 'Z') {
+        return c - 'A';
+    } else {
+        return c - 'a' + 26;
+    }
+}
+
+// 修建或摧毁道路的函数
+int findMinCost(vector<vector<int>>& country, vector<vector<int>>& rebuild, vector<vector<int>>& destroy) {
+    // 城市数量
+    int n = country.size();
+
+    // 初始化成本的的邻接矩阵
+    vector<vector<int>> costs(n, vector<int>(n, 0));    
+
+    // 初始化成本的邻接矩阵为建造成本，如果每对城市之间已存在路径那么它的建造成本就为0
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            costs[i][j] = country[i][j] == 0 ? rebuild[i][j] : 0;
+        }
+    }
+
+    // 使用Floyd-Warshall算法计算每对城市之间的最短路径
+    for (int k = 0; k < n; ++k) {
+        for (int i = 0; i < n; ++i) {
+            for (int j = 0; j < n; ++j) {
+                if ((costs[i][k] + costs[k][j]) < costs[i][j]) {
+                    costs[i][j] = costs[i][k] + costs[k][j];
+                }
+            }
+        }
+    }
+
+    // 计算总成本
+    int totalCost = 0;
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            totalCost += costs[i][j];
+        }
+    }
+    totalCost = totalCost / 2;
+
+    // 输出结果
+    return totalCost;
+}
+
+int main() {
+    string countryStr, buildStr, destroyStr;
+    cin >> countryStr >> buildStr >> destroyStr;
+
+    // According to the analysis, the number of cities (n) and the length (L) of countryStr
+    // is a quadratic relationship: L=n*n+(n-1).
+    // According to the quadratic formula, it can be simplified: n = (Sqrt(4L+5) - 1) / 2.
+    int n = (sqrt(4*countryStr.length()+5) - 1) / 2;
+    vector<vector<int>> country(n, vector<int>(n, 0));
+    vector<vector<int>> build(n, vector<int>(n, 0));
+    vector<vector<int>> destroy(n, vector<int>(n, 0));
+
+    // Parse the input strings.
+    for (int i = 0, commas=0; i < n; i++, commas++) {
+        for (int j = 0; j < n; j++) {
+            country[i][j] = countryStr[i * n + j + commas] - '0';
+            build[i][j] = charToCost(buildStr[i * n + j + commas]);
+            destroy[i][j] = charToCost(destroyStr[i * n + j + commas]);
+        }
+    }
+
+    // Calculate the min cost.
+    int minCost = findMinCost(country, build, destroy);
+    cout << minCost << endl;
+
+    return 0;
+}
